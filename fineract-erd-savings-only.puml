@@ -1,0 +1,568 @@
+@startuml Apache Fineract - Savings Domain ERD
+
+' ============================================
+' SAVINGS DOMAIN FOCUSED ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+
+' ============================================
+' CORE ENTITIES
+' ============================================
+
+entity "Client" as client {
+  * id : BIGINT <<PK>>
+  * account_no : VARCHAR(20)
+  * display_name : VARCHAR(160)
+}
+
+entity "Group" as group {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+
+entity "Staff" as staff {
+  * id : BIGINT <<PK>>
+  * firstname : VARCHAR(50)
+  * lastname : VARCHAR(50)
+}
+
+' ============================================
+' SAVINGS PRODUCT
+' ============================================
+
+entity "SavingsProduct" as savings_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiplesof : INT
+  --
+  ' Interest Configuration
+  * nominal_annual_interest_rate : DECIMAL(19,6)
+  * interest_compounding_period_enum : SMALLINT
+    (1=DAILY, 4=MONTHLY, 5=QUARTERLY,
+     6=SEMI_ANNUAL, 7=ANNUAL, 8=NO_COMPOUNDING)
+  * interest_posting_period_enum : SMALLINT
+    (4=MONTHLY, 5=QUARTERLY, 6=BIANNUAL,
+     7=ANNUAL)
+  * interest_calculation_type_enum : SMALLINT
+    (1=DAILY_BALANCE, 2=AVERAGE_DAILY_BALANCE)
+  * interest_calculation_days_in_year_type : SMALLINT
+    (360=360_DAYS, 365=365_DAYS, 366=ACTUAL)
+  --
+  ' Balance Requirements
+  min_required_opening_balance : DECIMAL(19,6)
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  enforce_min_required_balance : BOOLEAN
+  --
+  ' Withdrawal
+  lockin_period_frequency : DECIMAL(19,6)
+  lockin_period_frequency_enum : SMALLINT
+  withdrawal_fee_for_transfer : BOOLEAN
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  --
+  ' Overdraft
+  allow_overdraft : BOOLEAN
+  overdraft_limit : DECIMAL(19,6)
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  min_overdraft_for_interest_calculation : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  --
+  ' Withholding Tax
+  withhold_tax : BOOLEAN
+  tax_group_id : BIGINT <<FK>>
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+    (1=NONE, 2=CASH, 3=ACCRUAL_PERIODIC,
+     4=ACCRUAL_UPFRONT)
+  --
+  ' Status & Dates
+  is_dormancy_tracking_active : BOOLEAN
+  days_to_inactive : BIGINT
+  days_to_dormancy : BIGINT
+  days_to_escheat : BIGINT
+}
+
+' ============================================
+' SAVINGS ACCOUNT (Base)
+' ============================================
+
+entity "SavingsAccount" as savings_account {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' References
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  field_officer_id : BIGINT <<FK>>
+  savings_product_id : BIGINT <<FK>>
+  --
+  ' Status & Type
+  * status_enum : SMALLINT
+    (100=SUBMITTED_AND_PENDING_APPROVAL,
+     200=APPROVED, 300=ACTIVE,
+     303=ACTIVE_TRANSFER_IN_PROGRESS,
+     304=ACTIVE_TRANSFER_ON_HOLD,
+     400=WITHDRAWN_BY_APPLICANT,
+     500=REJECTED, 600=CLOSED,
+     700=PREMATURE_CLOSED, 800=MATURED)
+  sub_status_enum : SMALLINT
+  * account_type_enum : SMALLINT
+    (1=INDIVIDUAL, 2=GROUP, 3=GSIM)
+  * deposit_type_enum : SMALLINT
+    (100=SAVINGS_DEPOSIT, 200=FIXED_DEPOSIT,
+     300=RECURRING_DEPOSIT, 400=CURRENT_DEPOSIT)
+  --
+  ' Interest Configuration
+  nominal_annual_interest_rate : DECIMAL(19,6)
+  interest_compounding_period_enum : SMALLINT
+  interest_posting_period_enum : SMALLINT
+  interest_calculation_type_enum : SMALLINT
+  interest_calculation_days_in_year_type : SMALLINT
+  --
+  ' Balance Requirements & Limits
+  min_required_opening_balance : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  enforce_min_required_balance : BOOLEAN
+  max_withdrawal_amount : DECIMAL(19,6)
+  --
+  ' Withdrawal Lock-in
+  lockin_period_frequency : DECIMAL(19,6)
+  lockin_period_frequency_enum : SMALLINT
+  withdrawal_fee_for_transfer : BOOLEAN
+  --
+  ' Overdraft
+  allow_overdraft : BOOLEAN
+  overdraft_limit : DECIMAL(19,6)
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  min_overdraft_for_interest_calculation : DECIMAL(19,6)
+  --
+  ' DERIVED BALANCES (Calculated & Cached)
+  --
+  account_balance_derived : DECIMAL(19,6)
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  total_deposits_derived : DECIMAL(19,6)
+  total_withdrawals_derived : DECIMAL(19,6)
+  total_withdrawal_fees_derived : DECIMAL(19,6)
+  total_fees_charge_derived : DECIMAL(19,6)
+  total_penalty_charge_derived : DECIMAL(19,6)
+  total_annual_fees_derived : DECIMAL(19,6)
+  total_interest_earned_derived : DECIMAL(19,6)
+  total_interest_posted_derived : DECIMAL(19,6)
+  total_overdraft_interest_derived : DECIMAL(19,6)
+  total_withhold_tax_derived : DECIMAL(19,6)
+  last_interest_calculation_date : DATE
+  --
+  ' Dates
+  submittedon_date : DATE
+  submittedon_userid : BIGINT <<FK>>
+  rejectedon_date : DATE
+  rejectedon_userid : BIGINT <<FK>>
+  withdrawnon_date : DATE
+  withdrawnon_userid : BIGINT <<FK>>
+  approvedon_date : DATE
+  approvedon_userid : BIGINT <<FK>>
+  activatedon_date : DATE
+  activatedon_userid : BIGINT <<FK>>
+  closedon_date : DATE
+  closedon_userid : BIGINT <<FK>>
+  --
+  ' Lock-in Derived
+  lockedin_until_date_derived : DATE
+  --
+  ' Withholding Tax
+  withhold_tax : BOOLEAN
+  tax_group_id : BIGINT <<FK>>
+  --
+  ' Dormancy
+  start_interest_calculation_date : DATE
+  is_dormancy_tracking_active : BOOLEAN
+  days_to_inactive : BIGINT
+  days_to_dormancy : BIGINT
+  days_to_escheat : BIGINT
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiplesof : INT
+  in_multiples_of_deposit_term : BOOLEAN
+  --
+  ' On Hold
+  on_hold_funds_derived : DECIMAL(19,6)
+}
+
+' ============================================
+' SAVINGS TRANSACTIONS
+' ============================================
+
+entity "SavingsAccountTransaction" as savings_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Transaction Details
+  * transaction_type_enum : SMALLINT
+    (1=DEPOSIT, 2=WITHDRAWAL,
+     3=INTEREST_POSTING, 4=WITHDRAWAL_FEE,
+     5=ANNUAL_FEE, 6=WAIVE_CHARGES,
+     7=PAY_CHARGE, 12=INITIATE_TRANSFER,
+     13=APPROVE_TRANSFER, 14=WITHDRAW_TRANSFER,
+     15=REJECT_TRANSFER, 16=WRITTEN_OFF,
+     17=OVERDRAFT_INTEREST, 18=WITHHOLD_TAX,
+     19=ESCHEAT, 20=AMOUNT_HOLD,
+     21=AMOUNT_RELEASE)
+  --
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  submitted_on_date : DATE
+  --
+  ' Balance Tracking
+  running_balance_derived : DECIMAL(19,6)
+  cumulative_balance_derived : DECIMAL(19,6)
+  balance_end_date_derived : DATE
+  balance_number_of_days_derived : INT
+  overdraft_amount_derived : DECIMAL(19,6)
+  --
+  ' Status
+  * is_reversed : BOOLEAN
+  manually_adjusted_or_reversed : BOOLEAN
+  is_manual : BOOLEAN
+  --
+  ' Payment Details
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' References
+  ref_no : VARCHAR(100)
+  release_id_of_hold_amount : BIGINT <<FK>>
+  reason_for_block : VARCHAR(100)
+  --
+  ' Accounting
+  is_loan_disbursement : BOOLEAN
+}
+
+' ============================================
+' SAVINGS CHARGES
+' ============================================
+
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+    (1=LOAN, 2=SAVINGS, 3=CLIENT, 4=SHARES)
+  * charge_time_enum : SMALLINT
+    (1=DISBURSEMENT, 2=SPECIFIED_DUE_DATE,
+     4=SAVINGS_ACTIVATION, 5=SAVINGS_CLOSURE,
+     6=WITHDRAWAL_FEE, 7=ANNUAL_FEE,
+     8=MONTHLY_FEE, 9=INSTALLMENT_FEE,
+     10=OVERDUE_INSTALLMENT, 11=OVERDRAFT_FEE,
+     12=WEEKLY_FEE, 13=QUARTERLY_FEE)
+  * charge_calculation_enum : SMALLINT
+    (1=FLAT, 2=PERCENT_OF_AMOUNT,
+     3=PERCENT_OF_AMOUNT_AND_INTEREST,
+     4=PERCENT_OF_INTEREST)
+  * charge_payment_mode_enum : SMALLINT
+    (0=REGULAR, 1=ACCOUNT_TRANSFER)
+  --
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  * is_penalty : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  min_cap : DECIMAL(19,6)
+  max_cap : DECIMAL(19,6)
+  fee_on_day : INT
+  fee_on_month : INT
+  fee_interval : INT
+  fee_frequency : SMALLINT
+}
+
+entity "SavingsAccountCharge" as savings_charge {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  amount_percentage_apportioned_to : DECIMAL(19,6)
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  amount_or_percentage : DECIMAL(19,6)
+  --
+  ' Dates
+  due_for_collection_as_of_date : DATE
+  charge_due_date : DATE
+  --
+  ' Status
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+  inactivated_on_date : DATE
+}
+
+entity "SavingsAccountChargePaidBy" as savings_charge_paid {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_transaction_id : BIGINT <<FK>>
+  * savings_account_charge_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' FIXED DEPOSIT ACCOUNT
+' ============================================
+
+entity "FixedDepositAccount" as fixed_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  ' Deposit Details
+  * deposit_amount : DECIMAL(19,6)
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  deposit_period : INT
+  deposit_period_frequency_enum : SMALLINT
+  --
+  ' On Closure Options
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Expected Amount (Derived)
+  expected_firstdepositon_date : DATE
+  total_deposit_amount_derived : DECIMAL(19,6)
+}
+
+entity "DepositAccountTermAndPreClosure" as deposit_term {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  --
+  ' Maturity
+  min_deposit_term : INT
+  max_deposit_term : INT
+  min_deposit_term_type_enum : SMALLINT
+  max_deposit_term_type_enum : SMALLINT
+  in_multiples_of_deposit_term : INT
+  in_multiples_of_deposit_term_type_enum : SMALLINT
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Transfer Options
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Deposit Amount
+  expected_firstdepositon_date : DATE
+  deposit_amount : DECIMAL(19,6)
+  maturity_amount : DECIMAL(19,6)
+  maturity_date : DATE
+  deposit_period : INT
+  deposit_period_frequency_enum : SMALLINT
+}
+
+' ============================================
+' RECURRING DEPOSIT ACCOUNT
+' ============================================
+
+entity "RecurringDepositAccount" as recurring_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  ' Recurring Details
+  * deposit_amount : DECIMAL(19,6)
+  * total_overdue_amount : DECIMAL(19,6)
+  * no_of_overdue_installments : INT
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  --
+  ' On Closure
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Expected Amount (Derived)
+  expected_firstdepositon_date : DATE
+  total_deposit_amount_derived : DECIMAL(19,6)
+}
+
+entity "RecurringDepositScheduleInstallment" as recurring_schedule {
+  * id : BIGINT <<PK>>
+  --
+  * deposit_account_id : BIGINT <<FK>>
+  * installment : SMALLINT
+  --
+  * fromdate : DATE
+  * duedate : DATE
+  --
+  ' Deposit Amount
+  deposit_amount : DECIMAL(19,6)
+  deposit_amount_completed_derived : DECIMAL(19,6)
+  --
+  * completed_derived : BOOLEAN
+  obligations_met_on_date : DATE
+}
+
+' ============================================
+' INTEREST RATE CHART
+' ============================================
+
+entity "InterestRateChart" as interest_chart {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * from_date : DATE
+  end_date : DATE
+  is_primary_grouping_by_amount : BOOLEAN
+  --
+  ' Product Association
+  savings_product_id : BIGINT <<FK>>
+  deposit_account_id : BIGINT <<FK>>
+}
+
+entity "InterestRateChartSlab" as chart_slab {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  --
+  ' Period Range
+  from_period : INT
+  to_period : INT
+  period_type_enum : SMALLINT
+  --
+  ' Amount Range
+  amount_range_from : DECIMAL(19,6)
+  amount_range_to : DECIMAL(19,6)
+  --
+  ' Interest Rate
+  * annual_interest_rate : DECIMAL(19,6)
+  description : VARCHAR(200)
+}
+
+entity "InterestIncentives" as interest_incentive {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_slab_id : BIGINT <<FK>>
+  --
+  ' Incentive Configuration
+  * entity_type : SMALLINT
+    (1=CUSTOMER, 2=ACCOUNT, 3=STAFF, 4=GENDER,
+     5=AGE, 6=EMPLOYMENT_STATUS, 7=SALARY_RANGE)
+  * attribute_name : SMALLINT
+  * condition_type : SMALLINT
+    (1=EQUAL, 2=NOT_EQUAL, 3=BETWEEN,
+     4=LESSTHAN, 5=GREATER)
+  * attribute_value : VARCHAR(50)
+  * incentive_type : SMALLINT
+    (1=FIXED, 2=INCENTIVE)
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' PAYMENT DETAILS
+' ============================================
+
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Product to Account
+savings_product ||--o{ savings_account : "instantiated as"
+
+' Account to Parties
+client ||--o{ savings_account : "owns"
+group ||--o{ savings_account : "group account"
+office ||--o{ savings_account : "managed by"
+staff ||--o{ savings_account : "field officer"
+
+' Account Hierarchy (Inheritance)
+savings_account ||--o| fixed_deposit : "extends"
+savings_account ||--o| recurring_deposit : "extends"
+
+' Account to Components
+savings_account ||--o{ savings_transaction : "has"
+savings_account ||--o{ savings_charge : "charged"
+savings_account ||--o| deposit_term : "has terms"
+savings_account ||--o{ interest_chart : "has rate chart"
+
+' Transactions
+savings_transaction ||--o| payment_detail : "paid via"
+payment_type ||--o{ payment_detail : "type"
+
+' Charges
+charge ||--o{ savings_charge : "applied as"
+savings_charge ||--o{ savings_charge_paid : "paid by"
+savings_transaction ||--o{ savings_charge_paid : "pays charges"
+
+' Recurring Deposit Schedule
+recurring_deposit ||--o{ recurring_schedule : "has schedule"
+
+' Interest Rate Charts
+savings_product ||--o{ interest_chart : "has rate charts"
+interest_chart ||--o{ chart_slab : "has slabs"
+chart_slab ||--o{ interest_incentive : "has incentives"
+
+' Transfer Links
+savings_account ||--o{ fixed_deposit : "transfer to"
+savings_account ||--o{ recurring_deposit : "transfer to"
+
+@enduml

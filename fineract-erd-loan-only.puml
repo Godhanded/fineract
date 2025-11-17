@@ -1,0 +1,614 @@
+@startuml Apache Fineract - Loan Domain ERD
+
+' ============================================
+' LOAN DOMAIN FOCUSED ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+
+' ============================================
+' CORE LOAN ENTITIES
+' ============================================
+
+entity "Client" as client {
+  * id : BIGINT <<PK>>
+  * account_no : VARCHAR(20)
+  * display_name : VARCHAR(160)
+  * status : INT
+}
+
+entity "Group" as group {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * status : INT
+}
+
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+
+entity "Staff" as staff {
+  * id : BIGINT <<PK>>
+  * firstname : VARCHAR(50)
+  * lastname : VARCHAR(50)
+  * is_loan_officer : BOOLEAN
+}
+
+entity "Fund" as fund {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(255)
+}
+
+' ============================================
+' LOAN PRODUCT
+' ============================================
+
+entity "LoanProduct" as loan_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  --
+  ' Amount Configuration
+  * principal_amount : DECIMAL(19,6)
+  * min_principal_amount : DECIMAL(19,6)
+  * max_principal_amount : DECIMAL(19,6)
+  --
+  ' Interest Configuration
+  * nominal_interest_rate_per_period : DECIMAL(19,6)
+  * annual_nominal_interest_rate : DECIMAL(19,6)
+  * interest_method_enum : SMALLINT
+    (0=DECLINING_BALANCE, 1=FLAT)
+  * interest_calculated_in_period_enum : SMALLINT
+  * interest_period_frequency_enum : SMALLINT
+  --
+  ' Repayment Configuration
+  * number_of_repayments : SMALLINT
+  * repay_every : SMALLINT
+  * repayment_period_frequency_enum : SMALLINT
+    (0=DAYS, 1=WEEKS, 2=MONTHS)
+  * amortization_method_enum : SMALLINT
+    (0=EQUAL_PRINCIPAL, 1=EQUAL_INSTALLMENTS)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+    (1=CASH, 2=ACCRUAL_PERIODIC, 3=ACCRUAL_UPFRONT)
+  --
+  fund_id : BIGINT <<FK>>
+}
+
+' ============================================
+' LOAN ACCOUNT
+' ============================================
+
+entity "Loan" as loan {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' References
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  loan_officer_id : BIGINT <<FK>>
+  fund_id : BIGINT <<FK>>
+  --
+  ' Status & Type
+  * loan_status_id : SMALLINT
+    (100=SUBMITTED, 200=APPROVED,
+     300=ACTIVE, 600=CLOSED,
+     601=WRITTEN_OFF, 700=OVERPAID)
+  * loan_type_enum : SMALLINT
+    (1=INDIVIDUAL, 2=GROUP, 3=GLIM)
+  loan_sub_status_id : SMALLINT
+  --
+  ' Loan Terms
+  * principal_amount_proposed : DECIMAL(19,6)
+  * principal_amount : DECIMAL(19,6)
+  approved_principal : DECIMAL(19,6)
+  net_disbursal_amount : DECIMAL(19,6)
+  --
+  ' Interest Terms
+  nominal_interest_rate_per_period : DECIMAL(19,6)
+  annual_nominal_interest_rate : DECIMAL(19,6)
+  interest_method_enum : SMALLINT
+  interest_calculated_in_period_enum : SMALLINT
+  --
+  ' Repayment Terms
+  term_frequency : SMALLINT
+  term_period_frequency_enum : SMALLINT
+  number_of_repayments : SMALLINT
+  repay_every : SMALLINT
+  repayment_period_frequency_enum : SMALLINT
+  amortization_method_enum : SMALLINT
+  --
+  ' Grace Periods
+  grace_on_principal_periods : SMALLINT
+  grace_on_interest_periods : SMALLINT
+  grace_interest_free_periods : SMALLINT
+  --
+  ' Dates
+  submittedon_date : DATE
+  approvedon_date : DATE
+  expected_disbursedon_date : DATE
+  disbursedon_date : DATE
+  expected_firstrepaymenton_date : DATE
+  interest_calculated_from_date : DATE
+  expected_maturedon_date : DATE
+  maturedon_date : DATE
+  closedon_date : DATE
+  writtenoffon_date : DATE
+  rescheduledon_date : DATE
+  rejectedon_date : DATE
+  withdrawnon_date : DATE
+  --
+  ' DERIVED BALANCES (Calculated & Cached)
+  --
+  ' Principal Tracking
+  principal_disbursed_derived : DECIMAL(19,6)
+  principal_repaid_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  principal_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Interest Tracking
+  interest_charged_derived : DECIMAL(19,6)
+  interest_repaid_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_outstanding_derived : DECIMAL(19,6)
+  interest_recalculated_on : DATE
+  --
+  ' Fee Charges
+  fee_charges_charged_derived : DECIMAL(19,6)
+  fee_charges_repaid_derived : DECIMAL(19,6)
+  fee_charges_waived_derived : DECIMAL(19,6)
+  fee_charges_writtenoff_derived : DECIMAL(19,6)
+  fee_charges_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Penalty Charges
+  penalty_charges_charged_derived : DECIMAL(19,6)
+  penalty_charges_repaid_derived : DECIMAL(19,6)
+  penalty_charges_waived_derived : DECIMAL(19,6)
+  penalty_charges_writtenoff_derived : DECIMAL(19,6)
+  penalty_charges_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Total Tracking
+  total_expected_repayment_derived : DECIMAL(19,6)
+  total_repayment_derived : DECIMAL(19,6)
+  total_expected_costofloan_derived : DECIMAL(19,6)
+  total_costofloan_derived : DECIMAL(19,6)
+  total_waived_derived : DECIMAL(19,6)
+  total_writtenoff_derived : DECIMAL(19,6)
+  total_outstanding_derived : DECIMAL(19,6)
+  total_overpaid_derived : DECIMAL(19,6)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiples_of : SMALLINT
+  --
+  ' Tolerance
+  arrearstolerance_amount : DECIMAL(19,6)
+}
+
+' ============================================
+' LOAN TRANSACTIONS
+' ============================================
+
+entity "LoanTransaction" as loan_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Transaction Details
+  * transaction_type_enum : SMALLINT
+    (1=DISBURSEMENT, 2=REPAYMENT,
+     3=CONTRA, 4=WAIVE_INTEREST,
+     5=REPAYMENT_AT_DISBURSEMENT,
+     6=WRITEOFF, 7=MARKED_FOR_RESCHEDULING,
+     8=RECOVERY_REPAYMENT, 9=WAIVE_CHARGES,
+     10=ACCRUAL, 12=INITIATE_TRANSFER,
+     13=APPROVE_TRANSFER, 14=WITHDRAW_TRANSFER,
+     15=REJECT_TRANSFER, 16=REFUND,
+     17=CHARGE_PAYMENT, 18=REFUND_FOR_ACTIVE_LOAN,
+     19=INCOME_POSTING, 20=CREDIT_BALANCE_REFUND,
+     21=MERCHANT_ISSUED_REFUND, 22=PAYOUT_REFUND,
+     23=GOODWILL_CREDIT, 24=CHARGE_ADJUSTMENT,
+     25=CHARGE_OFF, 26=DOWN_PAYMENT,
+     27=REAGE, 28=REAMORTIZE,
+     29=CHARGEBACK, ...)
+  --
+  * transaction_date : DATE
+  submitted_on_date : DATE
+  --
+  * amount : DECIMAL(19,6)
+  --
+  ' Allocation Breakdown
+  principal_portion_derived : DECIMAL(19,6)
+  interest_portion_derived : DECIMAL(19,6)
+  fee_charges_portion_derived : DECIMAL(19,6)
+  penalty_charges_portion_derived : DECIMAL(19,6)
+  overpayment_portion_derived : DECIMAL(19,6)
+  unrecognized_income_portion : DECIMAL(19,6)
+  --
+  outstanding_loan_balance_derived : DECIMAL(19,6)
+  --
+  ' Status & References
+  * is_reversed : BOOLEAN
+  manually_adjusted_or_reversed : BOOLEAN
+  external_id : VARCHAR(100) <<unique>>
+  reversal_external_id : VARCHAR(100)
+  reversed_on_date : DATE
+  --
+  ' Payment Details
+  payment_detail_id : BIGINT <<FK>>
+}
+
+' ============================================
+' REPAYMENT SCHEDULE
+' ============================================
+
+entity "LoanRepaymentScheduleInstallment" as loan_schedule {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * installment : SMALLINT
+  --
+  ' Period Dates
+  * fromdate : DATE
+  * duedate : DATE
+  obligations_met_on_date : DATE
+  --
+  ' Principal Component
+  principal : DECIMAL(19,6)
+  principal_completed_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  --
+  ' Interest Component
+  interest : DECIMAL(19,6)
+  interest_completed_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  accrual_interest_derived : DECIMAL(19,6)
+  --
+  ' Fee Charges
+  fee_charges_amount : DECIMAL(19,6)
+  fee_charges_completed_derived : DECIMAL(19,6)
+  fee_charges_writtenoff_derived : DECIMAL(19,6)
+  fee_charges_waived_derived : DECIMAL(19,6)
+  accrual_fee_charges_derived : DECIMAL(19,6)
+  --
+  ' Penalty Charges
+  penalty_charges_amount : DECIMAL(19,6)
+  penalty_charges_completed_derived : DECIMAL(19,6)
+  penalty_charges_writtenoff_derived : DECIMAL(19,6)
+  penalty_charges_waived_derived : DECIMAL(19,6)
+  accrual_penalty_charges_derived : DECIMAL(19,6)
+  --
+  ' Status
+  * completed_derived : BOOLEAN
+  recalculated_interest_component : BOOLEAN
+}
+
+' ============================================
+' LOAN CHARGES
+' ============================================
+
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+    (1=LOAN, 2=SAVINGS, 3=CLIENT, 4=SHARES)
+  * charge_time_enum : SMALLINT
+    (1=DISBURSEMENT, 2=SPECIFIED_DUE_DATE,
+     3=INSTALLMENT_FEE, 4=OVERDUE_INSTALLMENT,
+     5=DISBURSEMENT_PAID_WITH_REPAYMENT,
+     6=OVERDUE_ON_MATURITY, 7=UPFRONT,
+     8=TRANCHE_DISBURSEMENT)
+  * charge_calculation_enum : SMALLINT
+    (1=FLAT, 2=PERCENT_OF_AMOUNT,
+     3=PERCENT_OF_AMOUNT_AND_INTEREST,
+     4=PERCENT_OF_INTEREST,
+     5=PERCENT_OF_DISBURSEMENT_AMOUNT)
+  * charge_payment_mode_enum : SMALLINT
+    (0=REGULAR, 1=ACCOUNT_TRANSFER)
+  --
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  --
+  * is_penalty : BOOLEAN
+  * is_active : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  min_cap : DECIMAL(19,6)
+  max_cap : DECIMAL(19,6)
+  fee_on_day : INT
+  fee_on_month : INT
+  fee_interval : INT
+  fee_frequency : SMALLINT
+}
+
+entity "LoanCharge" as loan_charge {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  * charge_payment_mode_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  amount_percentage_apportioned_to : DECIMAL(19,6)
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  amount_or_percentage : DECIMAL(19,6)
+  --
+  ' Dates
+  charge_time_enum : SMALLINT
+  due_for_collection_as_of_date : DATE
+  charge_due_date : DATE
+  charge_applied_date : DATE
+  --
+  ' Status
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+  inactivated_on_date : DATE
+}
+
+entity "LoanInstallmentCharge" as loan_installment_charge {
+  * id : BIGINT <<PK>>
+  --
+  * loan_charge_id : BIGINT <<FK>>
+  * loan_schedule_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  --
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  due_date : DATE
+}
+
+' ============================================
+' LOAN COLLATERAL
+' ============================================
+
+entity "LoanCollateral" as loan_collateral {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * type_cv_id : BIGINT <<FK>>
+  --
+  * value : DECIMAL(19,6)
+  description : VARCHAR(500)
+}
+
+entity "LoanCollateralManagement" as loan_collateral_mgmt {
+  * id : BIGINT <<PK>>
+  --
+  * client_collateral_id : BIGINT <<FK>>
+  * loan_id : BIGINT <<FK>>
+  --
+  * quantity : DECIMAL(19,6)
+  is_released : BOOLEAN
+}
+
+' ============================================
+' GUARANTOR
+' ============================================
+
+entity "Guarantor" as guarantor {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  ' Type & Relation
+  * guarantor_type_enum : SMALLINT
+    (1=CUSTOMER, 2=STAFF, 3=EXTERNAL)
+  entity_id : BIGINT
+  client_reln_cv_id : BIGINT <<FK>>
+  --
+  ' Personal Information
+  firstname : VARCHAR(50)
+  lastname : VARCHAR(50)
+  dob : DATE
+  address_line_1 : VARCHAR(500)
+  address_line_2 : VARCHAR(500)
+  city : VARCHAR(50)
+  state : VARCHAR(50)
+  country : VARCHAR(50)
+  zip : VARCHAR(20)
+  house_phone_number : VARCHAR(20)
+  mobile_number : VARCHAR(50)
+  comment : VARCHAR(500)
+  --
+  ' Financial
+  * amount : DECIMAL(19,6)
+  --
+  ' Status
+  is_active : BOOLEAN
+}
+
+entity "GuarantorFundingDetails" as guarantor_funding {
+  * id : BIGINT <<PK>>
+  --
+  * guarantor_id : BIGINT <<FK>>
+  account_associations_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+  amount_released_derived : DECIMAL(19,6)
+  amount_remaining_derived : DECIMAL(19,6)
+  amount_transfered_derived : DECIMAL(19,6)
+  --
+  * status_enum : SMALLINT
+}
+
+' ============================================
+' PAYMENT DETAILS
+' ============================================
+
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+
+' ============================================
+' ADVANCED LOAN FEATURES
+' ============================================
+
+entity "LoanDisbursementDetails" as loan_disbursement {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * expected_disburse_date : DATE
+  * principal : DECIMAL(19,6)
+  actual_disburse_date : DATE
+  net_disbursal_amount : DECIMAL(19,6)
+}
+
+entity "LoanTermVariations" as loan_term_variation {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * term_type : SMALLINT
+    (1=EMI_AMOUNT, 2=INSERT_INSTALLMENT,
+     3=DELETE_INSTALLMENT, 4=DUE_DATE,
+     5=PRINCIPAL_AMOUNT, 6=INTEREST_RATE,
+     7=GRACE_ON_PRINCIPAL, 8=GRACE_ON_INTEREST,
+     9=EXTEND_REPAYMENT_PERIOD)
+  --
+  * applicable_date : DATE
+  * decimal_value : DECIMAL(19,6)
+  date_value : DATE
+  is_specific_to_installment : BOOLEAN
+  applied_on_loan_schedule_id : BIGINT <<FK>>
+}
+
+entity "LoanRescheduleRequest" as loan_reschedule {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * status_enum : SMALLINT
+    (1=PENDING, 2=APPROVED, 3=REJECTED)
+  --
+  * reschedule_from_date : DATE
+  reschedule_from_installment : INT
+  reschedule_reason_cv_id : BIGINT <<FK>>
+  reschedule_reason_comment : VARCHAR(500)
+  --
+  ' New Terms
+  grace_on_principal : INT
+  grace_on_interest : INT
+  extra_terms : INT
+  new_interest_rate : DECIMAL(19,6)
+  adjusted_due_date : DATE
+  --
+  submitted_on_date : DATE
+  submitted_by_user_id : BIGINT <<FK>>
+  approved_on_date : DATE
+  approved_by_user_id : BIGINT <<FK>>
+  rejected_on_date : DATE
+  rejected_by_user_id : BIGINT <<FK>>
+}
+
+entity "LoanReAgeParameter" as loan_reage {
+  * id : BIGINT <<PK>>
+  --
+  * loan_transaction_id : BIGINT <<FK>>
+  --
+  * number_of_installments : INT
+  start_installment_number : INT
+  frequency_type : SMALLINT
+  frequency_number : INT
+}
+
+entity "LoanReAmortizationParameter" as loan_reamortize {
+  * id : BIGINT <<PK>>
+  --
+  * loan_transaction_id : BIGINT <<FK>>
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Product to Loan
+loan_product ||--o{ loan : "instantiated as"
+fund ||--o{ loan_product : "funds"
+fund ||--o{ loan : "funds"
+
+' Loan to Parties
+client ||--o{ loan : "borrows"
+group ||--o{ loan : "group loan"
+office ||--o{ loan : "managed by"
+staff ||--o{ loan : "loan officer"
+
+' Loan to Components
+loan ||--o{ loan_transaction : "has"
+loan ||--o{ loan_schedule : "has schedule"
+loan ||--o{ loan_charge : "charged"
+loan ||--o{ loan_collateral : "secured by"
+loan ||--o{ loan_collateral_mgmt : "collateral mgmt"
+loan ||--o{ guarantor : "guaranteed by"
+loan ||--o{ loan_disbursement : "disbursements"
+loan ||--o{ loan_term_variation : "term variations"
+loan ||--o{ loan_reschedule : "reschedule requests"
+
+' Charges
+charge ||--o{ loan_charge : "applied as"
+loan_charge ||--o{ loan_installment_charge : "allocated to installment"
+loan_installment_charge }o--|| loan_schedule : "in installment"
+
+' Transactions
+loan_transaction ||--o| payment_detail : "paid via"
+payment_type ||--o{ payment_detail : "type"
+
+' Transaction to Installment mapping
+loan_transaction ||--o{ loan_schedule : "applied to"
+
+' Guarantor Funding
+guarantor ||--o{ guarantor_funding : "funded by"
+
+' Advanced Features
+loan_transaction ||--o| loan_reage : "re-age params"
+loan_transaction ||--o| loan_reamortize : "re-amortize params"
+
+@enduml

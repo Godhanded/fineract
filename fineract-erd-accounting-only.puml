@@ -1,0 +1,499 @@
+@startuml Apache Fineract - Accounting Domain ERD
+
+' ============================================
+' ACCOUNTING DOMAIN FOCUSED ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+
+' ============================================
+' CHART OF ACCOUNTS
+' ============================================
+
+entity "GLAccount" as gl_account {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200)
+  * gl_code : VARCHAR(45) <<unique>>
+  --
+  ' Account Type
+  * classification_enum : SMALLINT
+    (1=ASSET, 2=LIABILITY, 3=EQUITY,
+     4=INCOME, 5=EXPENSE)
+  --
+  ' Usage Type
+  * account_usage : SMALLINT
+    (1=DETAIL - can post transactions,
+     2=HEADER - parent/grouping only)
+  --
+  ' Hierarchy
+  parent_id : BIGINT <<FK>>
+  hierarchy : VARCHAR(100)
+  --
+  ' Properties
+  * disabled : BOOLEAN
+  * manual_journal_entries_allowed : BOOLEAN
+  description : VARCHAR(500)
+  --
+  ' Tags
+  tag_id : BIGINT <<FK>>
+}
+
+' ============================================
+' JOURNAL ENTRIES
+' ============================================
+
+entity "JournalEntry" as journal_entry {
+  * id : BIGINT <<PK>>
+  --
+  ' Account & Office
+  * glaccount_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Entry Type
+  * type_enum : SMALLINT
+    (1=CREDIT, 2=DEBIT)
+  --
+  ' Transaction Details
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  submitted_on_date : DATE
+  description : VARCHAR(500)
+  --
+  ' Entity Tracking
+  entity_type_enum : SMALLINT
+    (1=CLIENT, 2=LOAN, 3=SAVINGS,
+     4=DEPOSIT, 5=SHARE, 6=DIVIDEND,
+     7=FUND_SOURCE)
+  entity_id : BIGINT
+  transaction_id : VARCHAR(50) <<unique per entity>>
+  --
+  ' Source Transaction References
+  loan_transaction_id : BIGINT <<FK>>
+  savings_transaction_id : BIGINT <<FK>>
+  client_transaction_id : BIGINT <<FK>>
+  share_transaction_id : BIGINT <<FK>>
+  --
+  ' Entry Status
+  * reversed : BOOLEAN
+  manual_entry : BOOLEAN
+  reversal_id : BIGINT <<FK>>
+  reversed_on_date : DATE
+  --
+  ' Payment Details
+  payment_details_id : BIGINT <<FK>>
+  --
+  ' References
+  ref_num : VARCHAR(100)
+  comments : VARCHAR(500)
+}
+
+' ============================================
+' PRODUCT TO GL ACCOUNT MAPPING
+' ============================================
+
+entity "LoanProduct" as loan_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+
+entity "SavingsProduct" as savings_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+
+entity "ShareProduct" as share_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+
+entity "ProductToGLAccountMapping" as product_gl_mapping {
+  * id : BIGINT <<PK>>
+  --
+  ' Product Reference
+  * product_id : BIGINT
+  * product_type : SMALLINT
+    (1=LOAN, 2=SAVING, 3=PROVISIONING,
+     4=SHARE)
+  --
+  ' GL Account Reference
+  * glaccount_id : BIGINT <<FK>>
+  --
+  ' Financial Account Type
+  * financial_account_type : SMALLINT
+  --
+  ' For Loan Products (Type 1):
+  ' 1=FUND_SOURCE (Asset)
+  ' 2=LOAN_PORTFOLIO (Asset)
+  ' 3=INTEREST_ON_LOANS (Income)
+  ' 4=INCOME_FROM_FEES (Income)
+  ' 5=INCOME_FROM_PENALTIES (Income)
+  ' 6=LOSSES_WRITTEN_OFF (Expense)
+  ' 7=INTEREST_RECEIVABLE (Asset - Accrual)
+  ' 8=FEES_RECEIVABLE (Asset - Accrual)
+  ' 9=PENALTIES_RECEIVABLE (Asset - Accrual)
+  ' 10=TRANSFERS_SUSPENSE (Liability)
+  ' 11=OVERPAYMENT (Liability)
+  ' 12=INCOME_FROM_RECOVERY (Income)
+  ' 13=INCOME_FROM_CHARGE_OFF_INTEREST (Income)
+  ' 14=INCOME_FROM_CHARGE_OFF_FEES (Income)
+  ' 15=CHARGE_OFF_EXPENSE (Expense)
+  ' 16=CHARGE_OFF_FRAUD_EXPENSE (Expense)
+  ' 17=INCOME_FROM_GOODWILL_CREDIT (Income)
+  ' 18=INCOME_FROM_CHARGE_OFF_PENALTY (Income)
+  --
+  ' For Savings Products (Type 2):
+  ' 1=SAVINGS_REFERENCE (Liability)
+  ' 2=SAVINGS_CONTROL (Asset)
+  ' 3=INTEREST_ON_SAVINGS (Expense)
+  ' 4=INCOME_FROM_FEES (Income)
+  ' 5=INCOME_FROM_PENALTIES (Income)
+  ' 6=TRANSFERS_SUSPENSE (Liability)
+  ' 7=OVERDRAFT_PORTFOLIO_CONTROL (Asset)
+  ' 8=INCOME_FROM_INTEREST (Income - Overdraft)
+  ' 9=LOSSES_WRITTEN_OFF (Expense)
+  ' 10=ESCHEAT_LIABILITY (Liability)
+  --
+  ' Charge-Specific Mapping
+  charge_id : BIGINT <<FK>>
+  --
+  ' Payment Type Mapping
+  payment_type : BIGINT <<FK>>
+}
+
+' ============================================
+' FINANCIAL ACTIVITY ACCOUNTS
+' ============================================
+
+entity "FinancialActivityAccount" as financial_activity {
+  * id : BIGINT <<PK>>
+  --
+  * glaccount_id : BIGINT <<FK>>
+  --
+  ' Activity Type
+  * financial_activity_type : SMALLINT
+    (100=ASSET_TRANSFER,
+     101=CASH_AT_MAINVAULT,
+     102=CASH_AT_TELLER,
+     103=ASSET_FUND_SOURCE,
+     200=LIABILITY_TRANSFER,
+     201=PAYABLE_DIVIDENDS,
+     300=OPENING_BALANCES_TRANSFER_CONTRA)
+}
+
+' ============================================
+' ACCOUNTING RULES
+' ============================================
+
+entity "AccountingRule" as accounting_rule {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  description : VARCHAR(500)
+  --
+  ' Office Scope
+  * office_id : BIGINT <<FK>>
+  --
+  ' Account References
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_id : BIGINT <<FK>>
+  --
+  ' Rule Properties
+  system_defined : BOOLEAN
+  allow_multiple_debit_entries : BOOLEAN
+  allow_multiple_credit_entries : BOOLEAN
+}
+
+entity "AccountingTagRule" as accounting_tag_rule {
+  * id : BIGINT <<PK>>
+  --
+  * acc_rule_id : BIGINT <<FK>>
+  * tag_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  * acc_type_enum : SMALLINT
+    (1=DEBIT, 2=CREDIT)
+}
+
+' ============================================
+' GL CLOSURES
+' ============================================
+
+entity "GLClosure" as gl_closure {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * closing_date : DATE
+  --
+  is_deleted : BOOLEAN
+  comments : VARCHAR(500)
+  --
+  createdby_id : BIGINT <<FK>>
+  created_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+}
+
+' ============================================
+' TRIAL BALANCE
+' ============================================
+
+entity "TrialBalance" as trial_balance {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * glaccount_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+  * entry_date : DATE
+  * created_date : DATE
+  --
+  transaction_date : DATE
+  closing_balance : DECIMAL(19,6)
+}
+
+' ============================================
+' PROVISIONING
+' ============================================
+
+entity "ProvisioningCategory" as provisioning_category {
+  * id : BIGINT <<PK>>
+  --
+  * category_name : VARCHAR(100) <<unique>>
+  description : VARCHAR(300)
+}
+
+entity "ProvisioningCriteria" as provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_name : VARCHAR(200) <<unique>>
+  createdby_id : BIGINT <<FK>>
+  created_date : DATETIME
+}
+
+entity "ProvisioningCriteriaDefinition" as provisioning_criteria_def {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  ' Aging Range
+  * min_age : BIGINT
+  * max_age : BIGINT
+  --
+  ' Provisioning Percentage
+  * provisioning_percentage : DECIMAL(19,6)
+  --
+  ' Liability Account
+  * liability_account : BIGINT <<FK>>
+  --
+  ' Expense Account
+  * expense_account : BIGINT <<FK>>
+}
+
+entity "LoanProductProvisioningEntry" as loan_product_provisioning {
+  * id : BIGINT <<PK>>
+  --
+  * history_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  * product_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  ' Amounts
+  overdue_in_days : BIGINT
+  reseve_amount : DECIMAL(19,6)
+  liability_account : BIGINT <<FK>>
+  expense_account : BIGINT <<FK>>
+}
+
+entity "ProvisioningEntry" as provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * journal_entry_id : BIGINT <<FK>>
+  * created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  --
+  ' Status
+  is_reversed : BOOLEAN
+}
+
+' ============================================
+' PAYMENT DETAILS
+' ============================================
+
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+
+' ============================================
+' ORGANIZATIONAL
+' ============================================
+
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  parent_id : BIGINT <<FK>>
+  hierarchy : VARCHAR(50)
+}
+
+entity "CodeValue" as code_value {
+  * id : BIGINT <<PK>>
+  * code_value : VARCHAR(100)
+}
+
+' ============================================
+' SOURCE TRANSACTIONS (SUMMARY)
+' ============================================
+
+entity "LoanTransaction" as loan_transaction {
+  * id : BIGINT <<PK>>
+  * loan_id : BIGINT
+  * transaction_type_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  * transaction_date : DATE
+}
+
+entity "SavingsAccountTransaction" as savings_transaction {
+  * id : BIGINT <<PK>>
+  * savings_account_id : BIGINT
+  * transaction_type_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  * transaction_date : DATE
+}
+
+entity "ClientTransaction" as client_transaction {
+  * id : BIGINT <<PK>>
+  * client_id : BIGINT
+  * amount : DECIMAL(19,6)
+}
+
+entity "ShareAccountTransaction" as share_transaction {
+  * id : BIGINT <<PK>>
+  * account_id : BIGINT
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' CHARGE (For Product Mapping)
+' ============================================
+
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+}
+
+' ============================================
+' RELATIONSHIPS - CHART OF ACCOUNTS
+' ============================================
+
+gl_account ||--o{ gl_account : "parent account"
+code_value ||--o{ gl_account : "tagged with"
+
+' ============================================
+' RELATIONSHIPS - JOURNAL ENTRIES
+' ============================================
+
+gl_account ||--o{ journal_entry : "posted to"
+office ||--o{ journal_entry : "entries in"
+
+journal_entry ||--o| journal_entry : "reversed by"
+journal_entry ||--o| payment_detail : "payment via"
+
+' Source Transactions Generate Journal Entries
+loan_transaction ||--o{ journal_entry : "generates"
+savings_transaction ||--o{ journal_entry : "generates"
+client_transaction ||--o{ journal_entry : "generates"
+share_transaction ||--o{ journal_entry : "generates"
+
+' ============================================
+' RELATIONSHIPS - PRODUCT MAPPINGS
+' ============================================
+
+loan_product ||--o{ product_gl_mapping : "mapped to GL"
+savings_product ||--o{ product_gl_mapping : "mapped to GL"
+share_product ||--o{ product_gl_mapping : "mapped to GL"
+
+gl_account ||--o{ product_gl_mapping : "used in mapping"
+charge ||--o{ product_gl_mapping : "charge-specific mapping"
+payment_type ||--o{ product_gl_mapping : "payment type mapping"
+
+' ============================================
+' RELATIONSHIPS - FINANCIAL ACTIVITIES
+' ============================================
+
+gl_account ||--o{ financial_activity : "activity account"
+
+' ============================================
+' RELATIONSHIPS - ACCOUNTING RULES
+' ============================================
+
+gl_account ||--o{ accounting_rule : "debit account"
+gl_account ||--o{ accounting_rule : "credit account"
+office ||--o{ accounting_rule : "rules in"
+
+accounting_rule ||--o{ accounting_tag_rule : "has tags"
+code_value ||--o{ accounting_tag_rule : "tag"
+gl_account ||--o{ accounting_tag_rule : "tagged account"
+
+' ============================================
+' RELATIONSHIPS - GL CLOSURES
+' ============================================
+
+office ||--o{ gl_closure : "closures for"
+
+' ============================================
+' RELATIONSHIPS - TRIAL BALANCE
+' ============================================
+
+office ||--o{ trial_balance : "balance in"
+gl_account ||--o{ trial_balance : "balance of"
+
+' ============================================
+' RELATIONSHIPS - PROVISIONING
+' ============================================
+
+provisioning_criteria ||--o{ provisioning_criteria_def : "definitions"
+provisioning_category ||--o{ provisioning_criteria_def : "for category"
+
+gl_account ||--o{ provisioning_criteria_def : "liability account"
+gl_account ||--o{ provisioning_criteria_def : "expense account"
+
+provisioning_entry ||--|| journal_entry : "creates"
+
+loan_product ||--o{ loan_product_provisioning : "provisioned"
+office ||--o{ loan_product_provisioning : "provisions in"
+provisioning_category ||--o{ loan_product_provisioning : "category"
+provisioning_criteria ||--o{ loan_product_provisioning : "criteria"
+
+gl_account ||--o{ loan_product_provisioning : "liability"
+gl_account ||--o{ loan_product_provisioning : "expense"
+
+' ============================================
+' RELATIONSHIPS - PAYMENT DETAILS
+' ============================================
+
+payment_type ||--o{ payment_detail : "type of"
+
+@enduml
