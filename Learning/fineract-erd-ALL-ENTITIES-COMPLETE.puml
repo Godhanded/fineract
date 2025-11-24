@@ -1,0 +1,3668 @@
+@startuml Apache Fineract - ALL ENTITIES COMPLETE ERD
+
+' ============================================
+' APACHE FINERACT - COMPLETE ERD WITH ALL 225+ ENTITIES
+' ============================================
+' This file combines ALL entities across all domains
+' Total entities: 225+
+'
+' Generated: Mon Nov 24 22:36:12 UTC 2025
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 100
+
+' ============================================
+' FROM: fineract-erd-core-entities.puml
+' ============================================
+
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * parent_id : BIGINT <<FK>>
+  * hierarchy : VARCHAR(100)
+  * opening_date : DATE
+  external_id : VARCHAR(100)
+}
+entity "Staff" as staff {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * firstname : VARCHAR(50)
+  * lastname : VARCHAR(50)
+  * is_loan_officer : BOOLEAN
+  * is_active : BOOLEAN
+  mobile_no : VARCHAR(50)
+  email : VARCHAR(100)
+}
+entity "Client" as client {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  * office_id : BIGINT <<FK>>
+  * status_enum : INT
+  * legal_form_enum : INT
+  staff_id : BIGINT <<FK>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' Personal Information
+  firstname : VARCHAR(50)
+  middlename : VARCHAR(50)
+  lastname : VARCHAR(50)
+  fullname : VARCHAR(160)
+  * display_name : VARCHAR(160)
+  date_of_birth : DATE
+  --
+  ' Contact
+  mobile_no : VARCHAR(50) <<unique>>
+  email_address : VARCHAR(150) <<unique>>
+  --
+  ' Classification
+  gender_cv_id : BIGINT <<FK>>
+  client_type_cv_id : BIGINT <<FK>>
+  client_classification_cv_id : BIGINT <<FK>>
+  --
+  ' Lifecycle
+  activation_date : DATE
+  submittedon_date : DATE
+  closedon_date : DATE
+  rejectedon_date : DATE
+  withdrawnon_date : DATE
+  --
+  ' Savings Link
+  default_savings_product : BIGINT <<FK>>
+  default_savings_account : BIGINT <<FK>>
+  --
+  ' Image
+  image_id : BIGINT <<FK>>
+}
+entity "ClientIdentifier" as client_identifier {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * document_type : BIGINT <<FK>>
+  * document_key : VARCHAR(1000)
+  status : INT
+  description : VARCHAR(1000)
+}
+entity "ClientAddress" as client_address {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * address_id : BIGINT <<FK>>
+  * address_type_id : BIGINT <<FK>>
+  is_active : BOOLEAN
+}
+entity "ClientFamilyMembers" as client_family {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  firstname : VARCHAR(100)
+  middlename : VARCHAR(100)
+  lastname : VARCHAR(100)
+  qualification : VARCHAR(100)
+  relationship_cv_id : BIGINT <<FK>>
+  gender_cv_id : BIGINT <<FK>>
+  date_of_birth : DATE
+  age : BIGINT
+  is_dependent : BOOLEAN
+}
+entity "Group" as group {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * account_no : VARCHAR(20)
+  * office_id : BIGINT <<FK>>
+  * status_enum : INT
+  staff_id : BIGINT <<FK>>
+  parent_id : BIGINT <<FK>>
+  level_id : INT <<FK>>
+  external_id : VARCHAR(100) <<unique>>
+  hierarchy : VARCHAR(100)
+  activation_date : DATE
+  submittedon_date : DATE
+}
+entity "GroupLevel" as group_level {
+  * id : INT <<PK>>
+  --
+  * level_name : VARCHAR(100)
+  parent_id : INT <<FK>>
+  super_parent : BOOLEAN
+  recursable : BOOLEAN
+  can_have_clients : BOOLEAN
+}
+entity "GroupClient" as group_client {
+  * group_id : BIGINT <<PK,FK>>
+  * client_id : BIGINT <<PK,FK>>
+}
+entity "LoanProduct" as loan_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * principal_amount : DECIMAL(19,6)
+  * min_principal_amount : DECIMAL(19,6)
+  * max_principal_amount : DECIMAL(19,6)
+  * nominal_interest_rate_per_period : DECIMAL(19,6)
+  * interest_period_frequency_enum : SMALLINT
+  * annual_nominal_interest_rate : DECIMAL(19,6)
+  * interest_method_enum : SMALLINT
+  * interest_calculated_in_period_enum : SMALLINT
+  * number_of_repayments : SMALLINT
+  * repay_every : SMALLINT
+  * repayment_period_frequency_enum : SMALLINT
+  * amortization_method_enum : SMALLINT
+  * accounting_type : SMALLINT
+  fund_id : BIGINT <<FK>>
+}
+entity "Loan" as loan {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  * loan_status_id : SMALLINT
+  * loan_type_enum : SMALLINT
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' Officers & Office
+  loan_officer_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  fund_id : BIGINT <<FK>>
+  --
+  ' Loan Terms
+  * principal_amount_proposed : DECIMAL(19,6)
+  * principal_amount : DECIMAL(19,6)
+  approved_principal : DECIMAL(19,6)
+  net_disbursal_amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  --
+  ' Interest
+  nominal_interest_rate_per_period : DECIMAL(19,6)
+  annual_nominal_interest_rate : DECIMAL(19,6)
+  interest_method_enum : SMALLINT
+  interest_calculated_in_period_enum : SMALLINT
+  --
+  ' Repayment
+  term_frequency : SMALLINT
+  term_period_frequency_enum : SMALLINT
+  number_of_repayments : SMALLINT
+  repay_every : SMALLINT
+  repayment_period_frequency_enum : SMALLINT
+  amortization_method_enum : SMALLINT
+  --
+  ' Dates
+  submittedon_date : DATE
+  approvedon_date : DATE
+  expected_disbursedon_date : DATE
+  disbursedon_date : DATE
+  expected_firstrepaymenton_date : DATE
+  expected_maturedon_date : DATE
+  maturedon_date : DATE
+  closedon_date : DATE
+  writtenoffon_date : DATE
+  --
+  ' Derived Balances (Calculated)
+  principal_disbursed_derived : DECIMAL(19,6)
+  principal_repaid_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  principal_outstanding_derived : DECIMAL(19,6)
+  interest_charged_derived : DECIMAL(19,6)
+  interest_repaid_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_outstanding_derived : DECIMAL(19,6)
+  fee_charges_charged_derived : DECIMAL(19,6)
+  fee_charges_repaid_derived : DECIMAL(19,6)
+  fee_charges_outstanding_derived : DECIMAL(19,6)
+  penalty_charges_charged_derived : DECIMAL(19,6)
+  penalty_charges_repaid_derived : DECIMAL(19,6)
+  penalty_charges_outstanding_derived : DECIMAL(19,6)
+  total_expected_repayment_derived : DECIMAL(19,6)
+  total_repayment_derived : DECIMAL(19,6)
+  total_outstanding_derived : DECIMAL(19,6)
+  total_overpaid_derived : DECIMAL(19,6)
+}
+entity "LoanTransaction" as loan_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * transaction_type_enum : SMALLINT
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  submitted_on_date : DATE
+  is_reversed : BOOLEAN
+  external_id : VARCHAR(100) <<unique>>
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' Allocation Portions
+  principal_portion_derived : DECIMAL(19,6)
+  interest_portion_derived : DECIMAL(19,6)
+  fee_charges_portion_derived : DECIMAL(19,6)
+  penalty_charges_portion_derived : DECIMAL(19,6)
+  overpayment_portion_derived : DECIMAL(19,6)
+  unrecognized_income_portion : DECIMAL(19,6)
+  outstanding_loan_balance_derived : DECIMAL(19,6)
+}
+entity "LoanRepaymentScheduleInstallment" as loan_schedule {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * installment : SMALLINT
+  * fromdate : DATE
+  * duedate : DATE
+  --
+  ' Principal
+  principal : DECIMAL(19,6)
+  principal_completed_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  --
+  ' Interest
+  interest : DECIMAL(19,6)
+  interest_completed_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  --
+  ' Charges
+  fee_charges_amount : DECIMAL(19,6)
+  fee_charges_completed_derived : DECIMAL(19,6)
+  fee_charges_writtenoff_derived : DECIMAL(19,6)
+  fee_charges_waived_derived : DECIMAL(19,6)
+  penalty_charges_amount : DECIMAL(19,6)
+  penalty_charges_completed_derived : DECIMAL(19,6)
+  penalty_charges_writtenoff_derived : DECIMAL(19,6)
+  penalty_charges_waived_derived : DECIMAL(19,6)
+  --
+  completed_derived : BOOLEAN
+  obligations_met_on_date : DATE
+  recalculated_interest_component : BOOLEAN
+}
+entity "LoanCharge" as loan_charge {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  * charge_payment_mode_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  due_for_collection_as_of_date : DATE
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  --
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+}
+entity "LoanCollateral" as loan_collateral {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * type_cv_id : BIGINT <<FK>>
+  value : DECIMAL(19,6)
+  description : VARCHAR(500)
+}
+entity "Guarantor" as guarantor {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  client_reln_cv_id : BIGINT <<FK>>
+  entity_id : BIGINT
+  guarantor_type_enum : SMALLINT
+  firstname : VARCHAR(50)
+  lastname : VARCHAR(50)
+  address_line_1 : VARCHAR(500)
+  mobile_number : VARCHAR(50)
+  amount : DECIMAL(19,6)
+}
+entity "SavingsProduct" as savings_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * nominal_annual_interest_rate : DECIMAL(19,6)
+  * interest_compounding_period_enum : SMALLINT
+  * interest_posting_period_enum : SMALLINT
+  * interest_calculation_type_enum : SMALLINT
+  * interest_calculation_days_in_year_type : SMALLINT
+  * accounting_type : SMALLINT
+  min_required_opening_balance : DECIMAL(19,6)
+  lockin_period_frequency : DECIMAL(19,6)
+  withdrawal_fee_for_transfer : BOOLEAN
+  allow_overdraft : BOOLEAN
+  overdraft_limit : DECIMAL(19,6)
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  min_overdraft_for_interest_calculation : DECIMAL(19,6)
+}
+entity "SavingsAccount" as savings_account {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  * status_enum : SMALLINT
+  * account_type_enum : SMALLINT
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' Officers & Office
+  field_officer_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  --
+  ' Interest Configuration
+  nominal_annual_interest_rate : DECIMAL(19,6)
+  interest_compounding_period_enum : SMALLINT
+  interest_posting_period_enum : SMALLINT
+  interest_calculation_type_enum : SMALLINT
+  interest_calculation_days_in_year_type : SMALLINT
+  --
+  ' Balance & Constraints
+  min_required_opening_balance : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  enforce_min_required_balance : BOOLEAN
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  overdraft_limit : DECIMAL(19,6)
+  allow_overdraft : BOOLEAN
+  --
+  ' Derived Balances
+  account_balance_derived : DECIMAL(19,6)
+  total_deposits_derived : DECIMAL(19,6)
+  total_withdrawals_derived : DECIMAL(19,6)
+  total_interest_earned_derived : DECIMAL(19,6)
+  total_interest_posted_derived : DECIMAL(19,6)
+  total_withdrawal_fees_derived : DECIMAL(19,6)
+  total_fees_charge_derived : DECIMAL(19,6)
+  total_penalty_charge_derived : DECIMAL(19,6)
+  total_annual_fees_derived : DECIMAL(19,6)
+  total_overdraft_interest_derived : DECIMAL(19,6)
+  --
+  ' Dates
+  submittedon_date : DATE
+  approvedon_date : DATE
+  activatedon_date : DATE
+  closedon_date : DATE
+  lockedin_until_date_derived : DATE
+  --
+  ' Sub-status
+  sub_status_enum : SMALLINT
+  deposit_type_enum : SMALLINT
+}
+entity "SavingsAccountTransaction" as savings_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * transaction_type_enum : SMALLINT
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  submitted_on_date : DATE
+  is_reversed : BOOLEAN
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' Balance Tracking
+  running_balance_derived : DECIMAL(19,6)
+  cumulative_balance_derived : DECIMAL(19,6)
+  overdraft_amount_derived : DECIMAL(19,6)
+}
+entity "SavingsAccountCharge" as savings_charge {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  due_for_collection_as_of_date : DATE
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  --
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+}
+entity "FixedDepositAccount" as fixed_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  * deposit_amount : DECIMAL(19,6)
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+}
+entity "RecurringDepositAccount" as recurring_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  * deposit_amount : DECIMAL(19,6)
+  * total_overdue_amount : DECIMAL(19,6)
+  * no_of_overdue_installments : INT
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+}
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * currency_code : VARCHAR(3)
+  * charge_applies_to_enum : SMALLINT
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  * charge_payment_mode_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  * is_penalty : BOOLEAN
+  * is_active : BOOLEAN
+  * is_deleted : BOOLEAN
+  min_cap : DECIMAL(19,6)
+  max_cap : DECIMAL(19,6)
+  fee_on_day : INT
+  fee_on_month : INT
+  fee_interval : INT
+  fee_frequency : SMALLINT
+}
+entity "Fund" as fund {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  external_id : VARCHAR(100)
+}
+entity "GLAccount" as gl_account {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200)
+  * gl_code : VARCHAR(45) <<unique>>
+  * account_usage : SMALLINT
+  * classification_enum : SMALLINT
+  parent_id : BIGINT <<FK>>
+  * disabled : BOOLEAN
+  * manual_journal_entries_allowed : BOOLEAN
+  description : VARCHAR(500)
+  tag_id : BIGINT <<FK>>
+}
+entity "JournalEntry" as journal_entry {
+  * id : BIGINT <<PK>>
+  --
+  * glaccount_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * type_enum : SMALLINT
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  submitted_on_date : DATE
+  description : VARCHAR(500)
+  entity_type_enum : SMALLINT
+  entity_id : BIGINT
+  transaction_id : VARCHAR(50)
+  --
+  ' Source Tracking
+  loan_transaction_id : BIGINT <<FK>>
+  savings_transaction_id : BIGINT <<FK>>
+  client_transaction_id : BIGINT <<FK>>
+  share_transaction_id : BIGINT <<FK>>
+  --
+  * reversed : BOOLEAN
+  manual_entry : BOOLEAN
+  payment_details_id : BIGINT <<FK>>
+}
+entity "ProductToGLAccountMapping" as product_gl_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * glaccount_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  * product_type : SMALLINT
+  * financial_account_type : SMALLINT
+  payment_type : BIGINT <<FK>>
+  charge_id : BIGINT <<FK>>
+}
+entity "FinancialActivityAccount" as financial_activity {
+  * id : BIGINT <<PK>>
+  --
+  * glaccount_id : BIGINT <<FK>>
+  * financial_activity_type : SMALLINT
+}
+entity "GLClosure" as gl_closure {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * closing_date : DATE
+  is_deleted : BOOLEAN
+  comments : VARCHAR(500)
+}
+entity "AccountingRule" as accounting_rule {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * office_id : BIGINT <<FK>>
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_id : BIGINT <<FK>>
+  description : VARCHAR(500)
+  system_defined : BOOLEAN
+  allow_multiple_debit_entries : BOOLEAN
+  allow_multiple_credit_entries : BOOLEAN
+}
+entity "Code" as code {
+  * id : BIGINT <<PK>>
+  --
+  * code_name : VARCHAR(100) <<unique>>
+  is_system_defined : BOOLEAN
+}
+entity "CodeValue" as code_value {
+  * id : BIGINT <<PK>>
+  --
+  * code_id : BIGINT <<FK>>
+  * code_value : VARCHAR(100)
+  * order_position : INT
+  code_score : INT
+  is_active : BOOLEAN
+  is_mandatory : BOOLEAN
+}
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+entity "Calendar" as calendar {
+  * id : BIGINT <<PK>>
+  --
+  * title : VARCHAR(50)
+  * entity_type_enum : SMALLINT
+  * entity_id : BIGINT
+  * start_date : DATE
+  * end_date : DATE
+  * duration : INT
+  * calendar_type_enum : SMALLINT
+  * repeating : BOOLEAN
+  * recurrence : VARCHAR(100)
+  remind_by_enum : SMALLINT
+  first_reminder : INT
+  second_reminder : INT
+  location : VARCHAR(100)
+}
+entity "Image" as image {
+  * id : BIGINT <<PK>>
+  --
+  * location : VARCHAR(500)
+  * storage_type_enum : SMALLINT
+  image : LONGBLOB
+}
+entity "CommandSource" as command_source {
+  * id : BIGINT <<PK>>
+  --
+  * action_name : VARCHAR(100)
+  * entity_name : VARCHAR(100)
+  * office_id : BIGINT <<FK>>
+  resource_id : BIGINT
+  * api_get_url : VARCHAR(100)
+  resource_get_url : VARCHAR(100)
+  command_as_json : TEXT
+  * maker_id : BIGINT <<FK>>
+  * made_on_date : DATETIME
+  checker_id : BIGINT <<FK>>
+  checked_on_date : DATETIME
+  * processing_result_enum : SMALLINT
+  result : TEXT
+  transaction_id : VARCHAR(100)
+  idempotency_key : VARCHAR(50)
+}
+office ||--o{ office : "parent"
+office ||--o{ staff : "employs"
+office ||--o{ client : "has"
+office ||--o{ group : "has"
+office ||--o{ loan : "manages"
+office ||--o{ savings_account : "manages"
+staff ||--o{ client : "assigned to"
+staff ||--o{ group : "assigned to"
+staff ||--o{ loan : "loan officer"
+staff ||--o{ savings_account : "field officer"
+client ||--o{ client_identifier : "has"
+client ||--o{ client_address : "has"
+client ||--o{ client_family : "has family"
+client ||--o| image : "has photo"
+client ||--o{ loan : "borrows"
+client ||--o{ savings_account : "owns"
+group ||--|| group_level : "at level"
+group ||--o{ group : "parent of"
+group ||--o{ loan : "group loans"
+group ||--o{ savings_account : "group accounts"
+group ||--o{ group_client : "has members"
+client ||--o{ group_client : "member of"
+code ||--o{ code_value : "contains"
+code_value ||--o{ client : "gender"
+code_value ||--o{ client : "type"
+code_value ||--o{ client : "classification"
+loan_product ||--o{ loan : "instantiated as"
+loan_product ||--|| fund : "funded by"
+loan ||--o{ loan_transaction : "has transactions"
+loan ||--o{ loan_schedule : "has schedule"
+loan ||--o{ loan_charge : "has charges"
+loan ||--o{ loan_collateral : "secured by"
+loan ||--o{ guarantor : "guaranteed by"
+loan ||--|| fund : "funded by"
+charge ||--o{ loan_charge : "applied to"
+charge ||--o{ savings_charge : "applied to"
+loan_transaction ||--o| payment_detail : "payment via"
+savings_product ||--o{ savings_account : "instantiated as"
+savings_account ||--o{ savings_transaction : "has transactions"
+savings_account ||--o{ savings_charge : "has charges"
+savings_account ||--|| fixed_deposit : "extends"
+savings_account ||--|| recurring_deposit : "extends"
+savings_transaction ||--o| payment_detail : "payment via"
+payment_type ||--o{ payment_detail : "type of"
+gl_account ||--o{ gl_account : "parent of"
+gl_account ||--o{ journal_entry : "posted to"
+gl_account ||--o{ product_gl_mapping : "mapped to"
+gl_account ||--o{ financial_activity : "used for"
+gl_account ||--o{ accounting_rule : "debit account"
+gl_account ||--o{ accounting_rule : "credit account"
+loan_transaction ||--o{ journal_entry : "generates"
+savings_transaction ||--o{ journal_entry : "generates"
+loan_product ||--o{ product_gl_mapping : "mapped to GL"
+savings_product ||--o{ product_gl_mapping : "mapped to GL"
+office ||--o{ gl_closure : "has closures"
+office ||--o{ journal_entry : "has entries"
+office ||--o{ accounting_rule : "has rules"
+calendar ||--|| group : "for group meetings"
+calendar ||--|| loan : "for loan schedule"
+command_source ||--|| staff : "made by"
+command_source ||--|| staff : "checked by"
+command_source ||--|| office : "in office"
+
+' ============================================
+' FROM: fineract-erd-loan-only.puml
+' ============================================
+
+entity "Client" as client {
+  * id : BIGINT <<PK>>
+  * account_no : VARCHAR(20)
+  * display_name : VARCHAR(160)
+  * status : INT
+}
+entity "Group" as group {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * status : INT
+}
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+entity "Staff" as staff {
+  * id : BIGINT <<PK>>
+  * firstname : VARCHAR(50)
+  * lastname : VARCHAR(50)
+  * is_loan_officer : BOOLEAN
+}
+entity "Fund" as fund {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(255)
+}
+entity "LoanProduct" as loan_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  --
+  ' Amount Configuration
+  * principal_amount : DECIMAL(19,6)
+  * min_principal_amount : DECIMAL(19,6)
+  * max_principal_amount : DECIMAL(19,6)
+  --
+  ' Interest Configuration
+  * nominal_interest_rate_per_period : DECIMAL(19,6)
+  * annual_nominal_interest_rate : DECIMAL(19,6)
+  * interest_method_enum : SMALLINT
+    (0=DECLINING_BALANCE, 1=FLAT)
+  * interest_calculated_in_period_enum : SMALLINT
+  * interest_period_frequency_enum : SMALLINT
+  --
+  ' Repayment Configuration
+  * number_of_repayments : SMALLINT
+  * repay_every : SMALLINT
+  * repayment_period_frequency_enum : SMALLINT
+    (0=DAYS, 1=WEEKS, 2=MONTHS)
+  * amortization_method_enum : SMALLINT
+    (0=EQUAL_PRINCIPAL, 1=EQUAL_INSTALLMENTS)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+    (1=CASH, 2=ACCRUAL_PERIODIC, 3=ACCRUAL_UPFRONT)
+  --
+  fund_id : BIGINT <<FK>>
+}
+entity "Loan" as loan {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' References
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  loan_officer_id : BIGINT <<FK>>
+  fund_id : BIGINT <<FK>>
+  --
+  ' Status & Type
+  * loan_status_id : SMALLINT
+    (100=SUBMITTED, 200=APPROVED,
+     300=ACTIVE, 600=CLOSED,
+     601=WRITTEN_OFF, 700=OVERPAID)
+  * loan_type_enum : SMALLINT
+    (1=INDIVIDUAL, 2=GROUP, 3=GLIM)
+  loan_sub_status_id : SMALLINT
+  --
+  ' Loan Terms
+  * principal_amount_proposed : DECIMAL(19,6)
+  * principal_amount : DECIMAL(19,6)
+  approved_principal : DECIMAL(19,6)
+  net_disbursal_amount : DECIMAL(19,6)
+  --
+  ' Interest Terms
+  nominal_interest_rate_per_period : DECIMAL(19,6)
+  annual_nominal_interest_rate : DECIMAL(19,6)
+  interest_method_enum : SMALLINT
+  interest_calculated_in_period_enum : SMALLINT
+  --
+  ' Repayment Terms
+  term_frequency : SMALLINT
+  term_period_frequency_enum : SMALLINT
+  number_of_repayments : SMALLINT
+  repay_every : SMALLINT
+  repayment_period_frequency_enum : SMALLINT
+  amortization_method_enum : SMALLINT
+  --
+  ' Grace Periods
+  grace_on_principal_periods : SMALLINT
+  grace_on_interest_periods : SMALLINT
+  grace_interest_free_periods : SMALLINT
+  --
+  ' Dates
+  submittedon_date : DATE
+  approvedon_date : DATE
+  expected_disbursedon_date : DATE
+  disbursedon_date : DATE
+  expected_firstrepaymenton_date : DATE
+  interest_calculated_from_date : DATE
+  expected_maturedon_date : DATE
+  maturedon_date : DATE
+  closedon_date : DATE
+  writtenoffon_date : DATE
+  rescheduledon_date : DATE
+  rejectedon_date : DATE
+  withdrawnon_date : DATE
+  --
+  ' DERIVED BALANCES (Calculated & Cached)
+  --
+  ' Principal Tracking
+  principal_disbursed_derived : DECIMAL(19,6)
+  principal_repaid_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  principal_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Interest Tracking
+  interest_charged_derived : DECIMAL(19,6)
+  interest_repaid_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_outstanding_derived : DECIMAL(19,6)
+  interest_recalculated_on : DATE
+  --
+  ' Fee Charges
+  fee_charges_charged_derived : DECIMAL(19,6)
+  fee_charges_repaid_derived : DECIMAL(19,6)
+  fee_charges_waived_derived : DECIMAL(19,6)
+  fee_charges_writtenoff_derived : DECIMAL(19,6)
+  fee_charges_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Penalty Charges
+  penalty_charges_charged_derived : DECIMAL(19,6)
+  penalty_charges_repaid_derived : DECIMAL(19,6)
+  penalty_charges_waived_derived : DECIMAL(19,6)
+  penalty_charges_writtenoff_derived : DECIMAL(19,6)
+  penalty_charges_outstanding_derived : DECIMAL(19,6)
+  --
+  ' Total Tracking
+  total_expected_repayment_derived : DECIMAL(19,6)
+  total_repayment_derived : DECIMAL(19,6)
+  total_expected_costofloan_derived : DECIMAL(19,6)
+  total_costofloan_derived : DECIMAL(19,6)
+  total_waived_derived : DECIMAL(19,6)
+  total_writtenoff_derived : DECIMAL(19,6)
+  total_outstanding_derived : DECIMAL(19,6)
+  total_overpaid_derived : DECIMAL(19,6)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiples_of : SMALLINT
+  --
+  ' Tolerance
+  arrearstolerance_amount : DECIMAL(19,6)
+}
+entity "LoanTransaction" as loan_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Transaction Details
+  * transaction_type_enum : SMALLINT
+    (1=DISBURSEMENT, 2=REPAYMENT,
+     3=CONTRA, 4=WAIVE_INTEREST,
+     5=REPAYMENT_AT_DISBURSEMENT,
+     6=WRITEOFF, 7=MARKED_FOR_RESCHEDULING,
+     8=RECOVERY_REPAYMENT, 9=WAIVE_CHARGES,
+     10=ACCRUAL, 12=INITIATE_TRANSFER,
+     13=APPROVE_TRANSFER, 14=WITHDRAW_TRANSFER,
+     15=REJECT_TRANSFER, 16=REFUND,
+     17=CHARGE_PAYMENT, 18=REFUND_FOR_ACTIVE_LOAN,
+     19=INCOME_POSTING, 20=CREDIT_BALANCE_REFUND,
+     21=MERCHANT_ISSUED_REFUND, 22=PAYOUT_REFUND,
+     23=GOODWILL_CREDIT, 24=CHARGE_ADJUSTMENT,
+     25=CHARGE_OFF, 26=DOWN_PAYMENT,
+     27=REAGE, 28=REAMORTIZE,
+     29=CHARGEBACK, ...)
+  --
+  * transaction_date : DATE
+  submitted_on_date : DATE
+  --
+  * amount : DECIMAL(19,6)
+  --
+  ' Allocation Breakdown
+  principal_portion_derived : DECIMAL(19,6)
+  interest_portion_derived : DECIMAL(19,6)
+  fee_charges_portion_derived : DECIMAL(19,6)
+  penalty_charges_portion_derived : DECIMAL(19,6)
+  overpayment_portion_derived : DECIMAL(19,6)
+  unrecognized_income_portion : DECIMAL(19,6)
+  --
+  outstanding_loan_balance_derived : DECIMAL(19,6)
+  --
+  ' Status & References
+  * is_reversed : BOOLEAN
+  manually_adjusted_or_reversed : BOOLEAN
+  external_id : VARCHAR(100) <<unique>>
+  reversal_external_id : VARCHAR(100)
+  reversed_on_date : DATE
+  --
+  ' Payment Details
+  payment_detail_id : BIGINT <<FK>>
+}
+entity "LoanRepaymentScheduleInstallment" as loan_schedule {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * installment : SMALLINT
+  --
+  ' Period Dates
+  * fromdate : DATE
+  * duedate : DATE
+  obligations_met_on_date : DATE
+  --
+  ' Principal Component
+  principal : DECIMAL(19,6)
+  principal_completed_derived : DECIMAL(19,6)
+  principal_writtenoff_derived : DECIMAL(19,6)
+  --
+  ' Interest Component
+  interest : DECIMAL(19,6)
+  interest_completed_derived : DECIMAL(19,6)
+  interest_writtenoff_derived : DECIMAL(19,6)
+  interest_waived_derived : DECIMAL(19,6)
+  accrual_interest_derived : DECIMAL(19,6)
+  --
+  ' Fee Charges
+  fee_charges_amount : DECIMAL(19,6)
+  fee_charges_completed_derived : DECIMAL(19,6)
+  fee_charges_writtenoff_derived : DECIMAL(19,6)
+  fee_charges_waived_derived : DECIMAL(19,6)
+  accrual_fee_charges_derived : DECIMAL(19,6)
+  --
+  ' Penalty Charges
+  penalty_charges_amount : DECIMAL(19,6)
+  penalty_charges_completed_derived : DECIMAL(19,6)
+  penalty_charges_writtenoff_derived : DECIMAL(19,6)
+  penalty_charges_waived_derived : DECIMAL(19,6)
+  accrual_penalty_charges_derived : DECIMAL(19,6)
+  --
+  ' Status
+  * completed_derived : BOOLEAN
+  recalculated_interest_component : BOOLEAN
+}
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+    (1=LOAN, 2=SAVINGS, 3=CLIENT, 4=SHARES)
+  * charge_time_enum : SMALLINT
+    (1=DISBURSEMENT, 2=SPECIFIED_DUE_DATE,
+     3=INSTALLMENT_FEE, 4=OVERDUE_INSTALLMENT,
+     5=DISBURSEMENT_PAID_WITH_REPAYMENT,
+     6=OVERDUE_ON_MATURITY, 7=UPFRONT,
+     8=TRANCHE_DISBURSEMENT)
+  * charge_calculation_enum : SMALLINT
+    (1=FLAT, 2=PERCENT_OF_AMOUNT,
+     3=PERCENT_OF_AMOUNT_AND_INTEREST,
+     4=PERCENT_OF_INTEREST,
+     5=PERCENT_OF_DISBURSEMENT_AMOUNT)
+  * charge_payment_mode_enum : SMALLINT
+    (0=REGULAR, 1=ACCOUNT_TRANSFER)
+  --
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  --
+  * is_penalty : BOOLEAN
+  * is_active : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  min_cap : DECIMAL(19,6)
+  max_cap : DECIMAL(19,6)
+  fee_on_day : INT
+  fee_on_month : INT
+  fee_interval : INT
+  fee_frequency : SMALLINT
+}
+entity "LoanCharge" as loan_charge {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  * charge_payment_mode_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  amount_percentage_apportioned_to : DECIMAL(19,6)
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  amount_or_percentage : DECIMAL(19,6)
+  --
+  ' Dates
+  charge_time_enum : SMALLINT
+  due_for_collection_as_of_date : DATE
+  charge_due_date : DATE
+  charge_applied_date : DATE
+  --
+  ' Status
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+  inactivated_on_date : DATE
+}
+entity "LoanInstallmentCharge" as loan_installment_charge {
+  * id : BIGINT <<PK>>
+  --
+  * loan_charge_id : BIGINT <<FK>>
+  * loan_schedule_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  --
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  due_date : DATE
+}
+entity "LoanCollateral" as loan_collateral {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * type_cv_id : BIGINT <<FK>>
+  --
+  * value : DECIMAL(19,6)
+  description : VARCHAR(500)
+}
+entity "LoanCollateralManagement" as loan_collateral_mgmt {
+  * id : BIGINT <<PK>>
+  --
+  * client_collateral_id : BIGINT <<FK>>
+  * loan_id : BIGINT <<FK>>
+  --
+  * quantity : DECIMAL(19,6)
+  is_released : BOOLEAN
+}
+entity "Guarantor" as guarantor {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  ' Type & Relation
+  * guarantor_type_enum : SMALLINT
+    (1=CUSTOMER, 2=STAFF, 3=EXTERNAL)
+  entity_id : BIGINT
+  client_reln_cv_id : BIGINT <<FK>>
+  --
+  ' Personal Information
+  firstname : VARCHAR(50)
+  lastname : VARCHAR(50)
+  dob : DATE
+  address_line_1 : VARCHAR(500)
+  address_line_2 : VARCHAR(500)
+  city : VARCHAR(50)
+  state : VARCHAR(50)
+  country : VARCHAR(50)
+  zip : VARCHAR(20)
+  house_phone_number : VARCHAR(20)
+  mobile_number : VARCHAR(50)
+  comment : VARCHAR(500)
+  --
+  ' Financial
+  * amount : DECIMAL(19,6)
+  --
+  ' Status
+  is_active : BOOLEAN
+}
+entity "GuarantorFundingDetails" as guarantor_funding {
+  * id : BIGINT <<PK>>
+  --
+  * guarantor_id : BIGINT <<FK>>
+  account_associations_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+  amount_released_derived : DECIMAL(19,6)
+  amount_remaining_derived : DECIMAL(19,6)
+  amount_transfered_derived : DECIMAL(19,6)
+  --
+  * status_enum : SMALLINT
+}
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+entity "LoanDisbursementDetails" as loan_disbursement {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * expected_disburse_date : DATE
+  * principal : DECIMAL(19,6)
+  actual_disburse_date : DATE
+  net_disbursal_amount : DECIMAL(19,6)
+}
+entity "LoanTermVariations" as loan_term_variation {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * term_type : SMALLINT
+    (1=EMI_AMOUNT, 2=INSERT_INSTALLMENT,
+     3=DELETE_INSTALLMENT, 4=DUE_DATE,
+     5=PRINCIPAL_AMOUNT, 6=INTEREST_RATE,
+     7=GRACE_ON_PRINCIPAL, 8=GRACE_ON_INTEREST,
+     9=EXTEND_REPAYMENT_PERIOD)
+  --
+  * applicable_date : DATE
+  * decimal_value : DECIMAL(19,6)
+  date_value : DATE
+  is_specific_to_installment : BOOLEAN
+  applied_on_loan_schedule_id : BIGINT <<FK>>
+}
+entity "LoanRescheduleRequest" as loan_reschedule {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  --
+  * status_enum : SMALLINT
+    (1=PENDING, 2=APPROVED, 3=REJECTED)
+  --
+  * reschedule_from_date : DATE
+  reschedule_from_installment : INT
+  reschedule_reason_cv_id : BIGINT <<FK>>
+  reschedule_reason_comment : VARCHAR(500)
+  --
+  ' New Terms
+  grace_on_principal : INT
+  grace_on_interest : INT
+  extra_terms : INT
+  new_interest_rate : DECIMAL(19,6)
+  adjusted_due_date : DATE
+  --
+  submitted_on_date : DATE
+  submitted_by_user_id : BIGINT <<FK>>
+  approved_on_date : DATE
+  approved_by_user_id : BIGINT <<FK>>
+  rejected_on_date : DATE
+  rejected_by_user_id : BIGINT <<FK>>
+}
+entity "LoanReAgeParameter" as loan_reage {
+  * id : BIGINT <<PK>>
+  --
+  * loan_transaction_id : BIGINT <<FK>>
+  --
+  * number_of_installments : INT
+  start_installment_number : INT
+  frequency_type : SMALLINT
+  frequency_number : INT
+}
+entity "LoanReAmortizationParameter" as loan_reamortize {
+  * id : BIGINT <<PK>>
+  --
+  * loan_transaction_id : BIGINT <<FK>>
+}
+loan_product ||--o{ loan : "instantiated as"
+fund ||--o{ loan_product : "funds"
+fund ||--o{ loan : "funds"
+client ||--o{ loan : "borrows"
+group ||--o{ loan : "group loan"
+office ||--o{ loan : "managed by"
+staff ||--o{ loan : "loan officer"
+loan ||--o{ loan_transaction : "has"
+loan ||--o{ loan_schedule : "has schedule"
+loan ||--o{ loan_charge : "charged"
+loan ||--o{ loan_collateral : "secured by"
+loan ||--o{ loan_collateral_mgmt : "collateral mgmt"
+loan ||--o{ guarantor : "guaranteed by"
+loan ||--o{ loan_disbursement : "disbursements"
+loan ||--o{ loan_term_variation : "term variations"
+loan ||--o{ loan_reschedule : "reschedule requests"
+charge ||--o{ loan_charge : "applied as"
+loan_charge ||--o{ loan_installment_charge : "allocated to installment"
+loan_transaction ||--o| payment_detail : "paid via"
+payment_type ||--o{ payment_detail : "type"
+loan_transaction ||--o{ loan_schedule : "applied to"
+guarantor ||--o{ guarantor_funding : "funded by"
+loan_transaction ||--o| loan_reage : "re-age params"
+loan_transaction ||--o| loan_reamortize : "re-amortize params"
+
+' ============================================
+' FROM: fineract-erd-savings-only.puml
+' ============================================
+
+entity "Client" as client {
+  * id : BIGINT <<PK>>
+  * account_no : VARCHAR(20)
+  * display_name : VARCHAR(160)
+}
+entity "Group" as group {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+}
+entity "Staff" as staff {
+  * id : BIGINT <<PK>>
+  * firstname : VARCHAR(50)
+  * lastname : VARCHAR(50)
+}
+entity "SavingsProduct" as savings_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * short_name : VARCHAR(4)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiplesof : INT
+  --
+  ' Interest Configuration
+  * nominal_annual_interest_rate : DECIMAL(19,6)
+  * interest_compounding_period_enum : SMALLINT
+    (1=DAILY, 4=MONTHLY, 5=QUARTERLY,
+     6=SEMI_ANNUAL, 7=ANNUAL, 8=NO_COMPOUNDING)
+  * interest_posting_period_enum : SMALLINT
+    (4=MONTHLY, 5=QUARTERLY, 6=BIANNUAL,
+     7=ANNUAL)
+  * interest_calculation_type_enum : SMALLINT
+    (1=DAILY_BALANCE, 2=AVERAGE_DAILY_BALANCE)
+  * interest_calculation_days_in_year_type : SMALLINT
+    (360=360_DAYS, 365=365_DAYS, 366=ACTUAL)
+  --
+  ' Balance Requirements
+  min_required_opening_balance : DECIMAL(19,6)
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  enforce_min_required_balance : BOOLEAN
+  --
+  ' Withdrawal
+  lockin_period_frequency : DECIMAL(19,6)
+  lockin_period_frequency_enum : SMALLINT
+  withdrawal_fee_for_transfer : BOOLEAN
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  --
+  ' Overdraft
+  allow_overdraft : BOOLEAN
+  overdraft_limit : DECIMAL(19,6)
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  min_overdraft_for_interest_calculation : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  --
+  ' Withholding Tax
+  withhold_tax : BOOLEAN
+  tax_group_id : BIGINT <<FK>>
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+    (1=NONE, 2=CASH, 3=ACCRUAL_PERIODIC,
+     4=ACCRUAL_UPFRONT)
+  --
+  ' Status & Dates
+  is_dormancy_tracking_active : BOOLEAN
+  days_to_inactive : BIGINT
+  days_to_dormancy : BIGINT
+  days_to_escheat : BIGINT
+}
+entity "SavingsAccount" as savings_account {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' References
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  group_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+  field_officer_id : BIGINT <<FK>>
+  savings_product_id : BIGINT <<FK>>
+  --
+  ' Status & Type
+  * status_enum : SMALLINT
+    (100=SUBMITTED_AND_PENDING_APPROVAL,
+     200=APPROVED, 300=ACTIVE,
+     303=ACTIVE_TRANSFER_IN_PROGRESS,
+     304=ACTIVE_TRANSFER_ON_HOLD,
+     400=WITHDRAWN_BY_APPLICANT,
+     500=REJECTED, 600=CLOSED,
+     700=PREMATURE_CLOSED, 800=MATURED)
+  sub_status_enum : SMALLINT
+  * account_type_enum : SMALLINT
+    (1=INDIVIDUAL, 2=GROUP, 3=GSIM)
+  * deposit_type_enum : SMALLINT
+    (100=SAVINGS_DEPOSIT, 200=FIXED_DEPOSIT,
+     300=RECURRING_DEPOSIT, 400=CURRENT_DEPOSIT)
+  --
+  ' Interest Configuration
+  nominal_annual_interest_rate : DECIMAL(19,6)
+  interest_compounding_period_enum : SMALLINT
+  interest_posting_period_enum : SMALLINT
+  interest_calculation_type_enum : SMALLINT
+  interest_calculation_days_in_year_type : SMALLINT
+  --
+  ' Balance Requirements & Limits
+  min_required_opening_balance : DECIMAL(19,6)
+  min_required_balance : DECIMAL(19,6)
+  enforce_min_required_balance : BOOLEAN
+  max_withdrawal_amount : DECIMAL(19,6)
+  --
+  ' Withdrawal Lock-in
+  lockin_period_frequency : DECIMAL(19,6)
+  lockin_period_frequency_enum : SMALLINT
+  withdrawal_fee_for_transfer : BOOLEAN
+  --
+  ' Overdraft
+  allow_overdraft : BOOLEAN
+  overdraft_limit : DECIMAL(19,6)
+  nominal_annual_interest_rate_overdraft : DECIMAL(19,6)
+  min_overdraft_for_interest_calculation : DECIMAL(19,6)
+  --
+  ' DERIVED BALANCES (Calculated & Cached)
+  --
+  account_balance_derived : DECIMAL(19,6)
+  min_balance_for_interest_calculation : DECIMAL(19,6)
+  total_deposits_derived : DECIMAL(19,6)
+  total_withdrawals_derived : DECIMAL(19,6)
+  total_withdrawal_fees_derived : DECIMAL(19,6)
+  total_fees_charge_derived : DECIMAL(19,6)
+  total_penalty_charge_derived : DECIMAL(19,6)
+  total_annual_fees_derived : DECIMAL(19,6)
+  total_interest_earned_derived : DECIMAL(19,6)
+  total_interest_posted_derived : DECIMAL(19,6)
+  total_overdraft_interest_derived : DECIMAL(19,6)
+  total_withhold_tax_derived : DECIMAL(19,6)
+  last_interest_calculation_date : DATE
+  --
+  ' Dates
+  submittedon_date : DATE
+  submittedon_userid : BIGINT <<FK>>
+  rejectedon_date : DATE
+  rejectedon_userid : BIGINT <<FK>>
+  withdrawnon_date : DATE
+  withdrawnon_userid : BIGINT <<FK>>
+  approvedon_date : DATE
+  approvedon_userid : BIGINT <<FK>>
+  activatedon_date : DATE
+  activatedon_userid : BIGINT <<FK>>
+  closedon_date : DATE
+  closedon_userid : BIGINT <<FK>>
+  --
+  ' Lock-in Derived
+  lockedin_until_date_derived : DATE
+  --
+  ' Withholding Tax
+  withhold_tax : BOOLEAN
+  tax_group_id : BIGINT <<FK>>
+  --
+  ' Dormancy
+  start_interest_calculation_date : DATE
+  is_dormancy_tracking_active : BOOLEAN
+  days_to_inactive : BIGINT
+  days_to_dormancy : BIGINT
+  days_to_escheat : BIGINT
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  currency_multiplesof : INT
+  in_multiples_of_deposit_term : BOOLEAN
+  --
+  ' On Hold
+  on_hold_funds_derived : DECIMAL(19,6)
+}
+entity "SavingsAccountTransaction" as savings_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Transaction Details
+  * transaction_type_enum : SMALLINT
+    (1=DEPOSIT, 2=WITHDRAWAL,
+     3=INTEREST_POSTING, 4=WITHDRAWAL_FEE,
+     5=ANNUAL_FEE, 6=WAIVE_CHARGES,
+     7=PAY_CHARGE, 12=INITIATE_TRANSFER,
+     13=APPROVE_TRANSFER, 14=WITHDRAW_TRANSFER,
+     15=REJECT_TRANSFER, 16=WRITTEN_OFF,
+     17=OVERDRAFT_INTEREST, 18=WITHHOLD_TAX,
+     19=ESCHEAT, 20=AMOUNT_HOLD,
+     21=AMOUNT_RELEASE)
+  --
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  submitted_on_date : DATE
+  --
+  ' Balance Tracking
+  running_balance_derived : DECIMAL(19,6)
+  cumulative_balance_derived : DECIMAL(19,6)
+  balance_end_date_derived : DATE
+  balance_number_of_days_derived : INT
+  overdraft_amount_derived : DECIMAL(19,6)
+  --
+  ' Status
+  * is_reversed : BOOLEAN
+  manually_adjusted_or_reversed : BOOLEAN
+  is_manual : BOOLEAN
+  --
+  ' Payment Details
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' References
+  ref_no : VARCHAR(100)
+  release_id_of_hold_amount : BIGINT <<FK>>
+  reason_for_block : VARCHAR(100)
+  --
+  ' Accounting
+  is_loan_disbursement : BOOLEAN
+}
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+    (1=LOAN, 2=SAVINGS, 3=CLIENT, 4=SHARES)
+  * charge_time_enum : SMALLINT
+    (1=DISBURSEMENT, 2=SPECIFIED_DUE_DATE,
+     4=SAVINGS_ACTIVATION, 5=SAVINGS_CLOSURE,
+     6=WITHDRAWAL_FEE, 7=ANNUAL_FEE,
+     8=MONTHLY_FEE, 9=INSTALLMENT_FEE,
+     10=OVERDUE_INSTALLMENT, 11=OVERDRAFT_FEE,
+     12=WEEKLY_FEE, 13=QUARTERLY_FEE)
+  * charge_calculation_enum : SMALLINT
+    (1=FLAT, 2=PERCENT_OF_AMOUNT,
+     3=PERCENT_OF_AMOUNT_AND_INTEREST,
+     4=PERCENT_OF_INTEREST)
+  * charge_payment_mode_enum : SMALLINT
+    (0=REGULAR, 1=ACCOUNT_TRANSFER)
+  --
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  * is_penalty : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  min_cap : DECIMAL(19,6)
+  max_cap : DECIMAL(19,6)
+  fee_on_day : INT
+  fee_on_month : INT
+  fee_interval : INT
+  fee_frequency : SMALLINT
+}
+entity "SavingsAccountCharge" as savings_charge {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * is_penalty : BOOLEAN
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  amount_percentage_apportioned_to : DECIMAL(19,6)
+  --
+  ' Derived Amounts
+  amount_paid_derived : DECIMAL(19,6)
+  amount_waived_derived : DECIMAL(19,6)
+  amount_writtenoff_derived : DECIMAL(19,6)
+  amount_outstanding_derived : DECIMAL(19,6)
+  amount_or_percentage : DECIMAL(19,6)
+  --
+  ' Dates
+  due_for_collection_as_of_date : DATE
+  charge_due_date : DATE
+  --
+  ' Status
+  is_paid_derived : BOOLEAN
+  waived : BOOLEAN
+  is_active : BOOLEAN
+  inactivated_on_date : DATE
+}
+entity "SavingsAccountChargePaidBy" as savings_charge_paid {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_transaction_id : BIGINT <<FK>>
+  * savings_account_charge_id : BIGINT <<FK>>
+  --
+  * amount : DECIMAL(19,6)
+}
+entity "FixedDepositAccount" as fixed_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  ' Deposit Details
+  * deposit_amount : DECIMAL(19,6)
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  deposit_period : INT
+  deposit_period_frequency_enum : SMALLINT
+  --
+  ' On Closure Options
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Expected Amount (Derived)
+  expected_firstdepositon_date : DATE
+  total_deposit_amount_derived : DECIMAL(19,6)
+}
+entity "DepositAccountTermAndPreClosure" as deposit_term {
+  * id : BIGINT <<PK>>
+  --
+  * savings_account_id : BIGINT <<FK>>
+  --
+  ' Maturity
+  min_deposit_term : INT
+  max_deposit_term : INT
+  min_deposit_term_type_enum : SMALLINT
+  max_deposit_term_type_enum : SMALLINT
+  in_multiples_of_deposit_term : INT
+  in_multiples_of_deposit_term_type_enum : SMALLINT
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Transfer Options
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Deposit Amount
+  expected_firstdepositon_date : DATE
+  deposit_amount : DECIMAL(19,6)
+  maturity_amount : DECIMAL(19,6)
+  maturity_date : DATE
+  deposit_period : INT
+  deposit_period_frequency_enum : SMALLINT
+}
+entity "RecurringDepositAccount" as recurring_deposit {
+  * id : BIGINT <<PK,FK>>
+  --
+  ' Recurring Details
+  * deposit_amount : DECIMAL(19,6)
+  * total_overdue_amount : DECIMAL(19,6)
+  * no_of_overdue_installments : INT
+  * maturity_amount : DECIMAL(19,6)
+  * maturity_date : DATE
+  --
+  ' On Closure
+  on_account_closure_id : BIGINT <<FK>>
+  transfer_to_savings_account_id : BIGINT <<FK>>
+  transfer_interest_to_linked_account : BOOLEAN
+  --
+  ' Pre-mature Closure
+  pre_closure_penal_applicable : BOOLEAN
+  pre_closure_penal_interest : DECIMAL(19,6)
+  pre_closure_penal_interest_on_enum : SMALLINT
+  --
+  ' Expected Amount (Derived)
+  expected_firstdepositon_date : DATE
+  total_deposit_amount_derived : DECIMAL(19,6)
+}
+entity "RecurringDepositScheduleInstallment" as recurring_schedule {
+  * id : BIGINT <<PK>>
+  --
+  * deposit_account_id : BIGINT <<FK>>
+  * installment : SMALLINT
+  --
+  * fromdate : DATE
+  * duedate : DATE
+  --
+  ' Deposit Amount
+  deposit_amount : DECIMAL(19,6)
+  deposit_amount_completed_derived : DECIMAL(19,6)
+  --
+  * completed_derived : BOOLEAN
+  obligations_met_on_date : DATE
+}
+entity "InterestRateChart" as interest_chart {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * from_date : DATE
+  end_date : DATE
+  is_primary_grouping_by_amount : BOOLEAN
+  --
+  ' Product Association
+  savings_product_id : BIGINT <<FK>>
+  deposit_account_id : BIGINT <<FK>>
+}
+entity "InterestRateChartSlab" as chart_slab {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  --
+  ' Period Range
+  from_period : INT
+  to_period : INT
+  period_type_enum : SMALLINT
+  --
+  ' Amount Range
+  amount_range_from : DECIMAL(19,6)
+  amount_range_to : DECIMAL(19,6)
+  --
+  ' Interest Rate
+  * annual_interest_rate : DECIMAL(19,6)
+  description : VARCHAR(200)
+}
+entity "InterestIncentives" as interest_incentive {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_slab_id : BIGINT <<FK>>
+  --
+  ' Incentive Configuration
+  * entity_type : SMALLINT
+    (1=CUSTOMER, 2=ACCOUNT, 3=STAFF, 4=GENDER,
+     5=AGE, 6=EMPLOYMENT_STATUS, 7=SALARY_RANGE)
+  * attribute_name : SMALLINT
+  * condition_type : SMALLINT
+    (1=EQUAL, 2=NOT_EQUAL, 3=BETWEEN,
+     4=LESSTHAN, 5=GREATER)
+  * attribute_value : VARCHAR(50)
+  * incentive_type : SMALLINT
+    (1=FIXED, 2=INCENTIVE)
+  * amount : DECIMAL(19,6)
+}
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+savings_product ||--o{ savings_account : "instantiated as"
+client ||--o{ savings_account : "owns"
+group ||--o{ savings_account : "group account"
+office ||--o{ savings_account : "managed by"
+staff ||--o{ savings_account : "field officer"
+savings_account ||--o| fixed_deposit : "extends"
+savings_account ||--o| recurring_deposit : "extends"
+savings_account ||--o{ savings_transaction : "has"
+savings_account ||--o{ savings_charge : "charged"
+savings_account ||--o| deposit_term : "has terms"
+savings_account ||--o{ interest_chart : "has rate chart"
+savings_transaction ||--o| payment_detail : "paid via"
+payment_type ||--o{ payment_detail : "type"
+charge ||--o{ savings_charge : "applied as"
+savings_charge ||--o{ savings_charge_paid : "paid by"
+savings_transaction ||--o{ savings_charge_paid : "pays charges"
+recurring_deposit ||--o{ recurring_schedule : "has schedule"
+savings_product ||--o{ interest_chart : "has rate charts"
+interest_chart ||--o{ chart_slab : "has slabs"
+chart_slab ||--o{ interest_incentive : "has incentives"
+savings_account ||--o{ fixed_deposit : "transfer to"
+savings_account ||--o{ recurring_deposit : "transfer to"
+
+' ============================================
+' FROM: fineract-erd-accounting-only.puml
+' ============================================
+
+entity "GLAccount" as gl_account {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200)
+  * gl_code : VARCHAR(45) <<unique>>
+  --
+  ' Account Type
+  * classification_enum : SMALLINT
+    (1=ASSET, 2=LIABILITY, 3=EQUITY,
+     4=INCOME, 5=EXPENSE)
+  --
+  ' Usage Type
+  * account_usage : SMALLINT
+    (1=DETAIL - can post transactions,
+     2=HEADER - parent/grouping only)
+  --
+  ' Hierarchy
+  parent_id : BIGINT <<FK>>
+  hierarchy : VARCHAR(100)
+  --
+  ' Properties
+  * disabled : BOOLEAN
+  * manual_journal_entries_allowed : BOOLEAN
+  description : VARCHAR(500)
+  --
+  ' Tags
+  tag_id : BIGINT <<FK>>
+}
+entity "JournalEntry" as journal_entry {
+  * id : BIGINT <<PK>>
+  --
+  ' Account & Office
+  * glaccount_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  --
+  ' Entry Type
+  * type_enum : SMALLINT
+    (1=CREDIT, 2=DEBIT)
+  --
+  ' Transaction Details
+  * transaction_date : DATE
+  * amount : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+  submitted_on_date : DATE
+  description : VARCHAR(500)
+  --
+  ' Entity Tracking
+  entity_type_enum : SMALLINT
+    (1=CLIENT, 2=LOAN, 3=SAVINGS,
+     4=DEPOSIT, 5=SHARE, 6=DIVIDEND,
+     7=FUND_SOURCE)
+  entity_id : BIGINT
+  transaction_id : VARCHAR(50) <<unique per entity>>
+  --
+  ' Source Transaction References
+  loan_transaction_id : BIGINT <<FK>>
+  savings_transaction_id : BIGINT <<FK>>
+  client_transaction_id : BIGINT <<FK>>
+  share_transaction_id : BIGINT <<FK>>
+  --
+  ' Entry Status
+  * reversed : BOOLEAN
+  manual_entry : BOOLEAN
+  reversal_id : BIGINT <<FK>>
+  reversed_on_date : DATE
+  --
+  ' Payment Details
+  payment_details_id : BIGINT <<FK>>
+  --
+  ' References
+  ref_num : VARCHAR(100)
+  comments : VARCHAR(500)
+}
+entity "LoanProduct" as loan_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+entity "SavingsProduct" as savings_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+entity "ShareProduct" as share_product {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * accounting_type : SMALLINT
+}
+entity "ProductToGLAccountMapping" as product_gl_mapping {
+  * id : BIGINT <<PK>>
+  --
+  ' Product Reference
+  * product_id : BIGINT
+  * product_type : SMALLINT
+    (1=LOAN, 2=SAVING, 3=PROVISIONING,
+     4=SHARE)
+  --
+  ' GL Account Reference
+  * glaccount_id : BIGINT <<FK>>
+  --
+  ' Financial Account Type
+  * financial_account_type : SMALLINT
+  --
+  ' For Loan Products (Type 1):
+  ' 1=FUND_SOURCE (Asset)
+  ' 2=LOAN_PORTFOLIO (Asset)
+  ' 3=INTEREST_ON_LOANS (Income)
+  ' 4=INCOME_FROM_FEES (Income)
+  ' 5=INCOME_FROM_PENALTIES (Income)
+  ' 6=LOSSES_WRITTEN_OFF (Expense)
+  ' 7=INTEREST_RECEIVABLE (Asset - Accrual)
+  ' 8=FEES_RECEIVABLE (Asset - Accrual)
+  ' 9=PENALTIES_RECEIVABLE (Asset - Accrual)
+  ' 10=TRANSFERS_SUSPENSE (Liability)
+  ' 11=OVERPAYMENT (Liability)
+  ' 12=INCOME_FROM_RECOVERY (Income)
+  ' 13=INCOME_FROM_CHARGE_OFF_INTEREST (Income)
+  ' 14=INCOME_FROM_CHARGE_OFF_FEES (Income)
+  ' 15=CHARGE_OFF_EXPENSE (Expense)
+  ' 16=CHARGE_OFF_FRAUD_EXPENSE (Expense)
+  ' 17=INCOME_FROM_GOODWILL_CREDIT (Income)
+  ' 18=INCOME_FROM_CHARGE_OFF_PENALTY (Income)
+  --
+  ' For Savings Products (Type 2):
+  ' 1=SAVINGS_REFERENCE (Liability)
+  ' 2=SAVINGS_CONTROL (Asset)
+  ' 3=INTEREST_ON_SAVINGS (Expense)
+  ' 4=INCOME_FROM_FEES (Income)
+  ' 5=INCOME_FROM_PENALTIES (Income)
+  ' 6=TRANSFERS_SUSPENSE (Liability)
+  ' 7=OVERDRAFT_PORTFOLIO_CONTROL (Asset)
+  ' 8=INCOME_FROM_INTEREST (Income - Overdraft)
+  ' 9=LOSSES_WRITTEN_OFF (Expense)
+  ' 10=ESCHEAT_LIABILITY (Liability)
+  --
+  ' Charge-Specific Mapping
+  charge_id : BIGINT <<FK>>
+  --
+  ' Payment Type Mapping
+  payment_type : BIGINT <<FK>>
+}
+entity "FinancialActivityAccount" as financial_activity {
+  * id : BIGINT <<PK>>
+  --
+  * glaccount_id : BIGINT <<FK>>
+  --
+  ' Activity Type
+  * financial_activity_type : SMALLINT
+    (100=ASSET_TRANSFER,
+     101=CASH_AT_MAINVAULT,
+     102=CASH_AT_TELLER,
+     103=ASSET_FUND_SOURCE,
+     200=LIABILITY_TRANSFER,
+     201=PAYABLE_DIVIDENDS,
+     300=OPENING_BALANCES_TRANSFER_CONTRA)
+}
+entity "AccountingRule" as accounting_rule {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  description : VARCHAR(500)
+  --
+  ' Office Scope
+  * office_id : BIGINT <<FK>>
+  --
+  ' Account References
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_id : BIGINT <<FK>>
+  --
+  ' Rule Properties
+  system_defined : BOOLEAN
+  allow_multiple_debit_entries : BOOLEAN
+  allow_multiple_credit_entries : BOOLEAN
+}
+entity "AccountingTagRule" as accounting_tag_rule {
+  * id : BIGINT <<PK>>
+  --
+  * acc_rule_id : BIGINT <<FK>>
+  * tag_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  * acc_type_enum : SMALLINT
+    (1=DEBIT, 2=CREDIT)
+}
+entity "GLClosure" as gl_closure {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * closing_date : DATE
+  --
+  is_deleted : BOOLEAN
+  comments : VARCHAR(500)
+  --
+  createdby_id : BIGINT <<FK>>
+  created_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+}
+entity "TrialBalance" as trial_balance {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * glaccount_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+  * entry_date : DATE
+  * created_date : DATE
+  --
+  transaction_date : DATE
+  closing_balance : DECIMAL(19,6)
+}
+entity "ProvisioningCategory" as provisioning_category {
+  * id : BIGINT <<PK>>
+  --
+  * category_name : VARCHAR(100) <<unique>>
+  description : VARCHAR(300)
+}
+entity "ProvisioningCriteria" as provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_name : VARCHAR(200) <<unique>>
+  createdby_id : BIGINT <<FK>>
+  created_date : DATETIME
+}
+entity "ProvisioningCriteriaDefinition" as provisioning_criteria_def {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  ' Aging Range
+  * min_age : BIGINT
+  * max_age : BIGINT
+  --
+  ' Provisioning Percentage
+  * provisioning_percentage : DECIMAL(19,6)
+  --
+  ' Liability Account
+  * liability_account : BIGINT <<FK>>
+  --
+  ' Expense Account
+  * expense_account : BIGINT <<FK>>
+}
+entity "LoanProductProvisioningEntry" as loan_product_provisioning {
+  * id : BIGINT <<PK>>
+  --
+  * history_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  * product_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  ' Amounts
+  overdue_in_days : BIGINT
+  reseve_amount : DECIMAL(19,6)
+  liability_account : BIGINT <<FK>>
+  expense_account : BIGINT <<FK>>
+}
+entity "ProvisioningEntry" as provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * journal_entry_id : BIGINT <<FK>>
+  * created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  --
+  ' Status
+  is_reversed : BOOLEAN
+}
+entity "PaymentDetail" as payment_detail {
+  * id : BIGINT <<PK>>
+  --
+  * payment_type_id : BIGINT <<FK>>
+  account_number : VARCHAR(100)
+  check_number : VARCHAR(100)
+  receipt_number : VARCHAR(100)
+  bank_number : VARCHAR(100)
+  routing_code : VARCHAR(100)
+}
+entity "PaymentType" as payment_type {
+  * id : BIGINT <<PK>>
+  --
+  * value : VARCHAR(100)
+  description : VARCHAR(500)
+  is_cash_payment : BOOLEAN
+  order_position : INT
+}
+entity "Office" as office {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  parent_id : BIGINT <<FK>>
+  hierarchy : VARCHAR(50)
+}
+entity "CodeValue" as code_value {
+  * id : BIGINT <<PK>>
+  * code_value : VARCHAR(100)
+}
+entity "LoanTransaction" as loan_transaction {
+  * id : BIGINT <<PK>>
+  * loan_id : BIGINT
+  * transaction_type_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  * transaction_date : DATE
+}
+entity "SavingsAccountTransaction" as savings_transaction {
+  * id : BIGINT <<PK>>
+  * savings_account_id : BIGINT
+  * transaction_type_enum : SMALLINT
+  * amount : DECIMAL(19,6)
+  * transaction_date : DATE
+}
+entity "ClientTransaction" as client_transaction {
+  * id : BIGINT <<PK>>
+  * client_id : BIGINT
+  * amount : DECIMAL(19,6)
+}
+entity "ShareAccountTransaction" as share_transaction {
+  * id : BIGINT <<PK>>
+  * account_id : BIGINT
+  * amount : DECIMAL(19,6)
+}
+entity "Charge" as charge {
+  * id : BIGINT <<PK>>
+  * name : VARCHAR(100)
+  * charge_applies_to_enum : SMALLINT
+}
+gl_account ||--o{ gl_account : "parent account"
+code_value ||--o{ gl_account : "tagged with"
+gl_account ||--o{ journal_entry : "posted to"
+office ||--o{ journal_entry : "entries in"
+journal_entry ||--o| journal_entry : "reversed by"
+journal_entry ||--o| payment_detail : "payment via"
+loan_transaction ||--o{ journal_entry : "generates"
+savings_transaction ||--o{ journal_entry : "generates"
+client_transaction ||--o{ journal_entry : "generates"
+share_transaction ||--o{ journal_entry : "generates"
+loan_product ||--o{ product_gl_mapping : "mapped to GL"
+savings_product ||--o{ product_gl_mapping : "mapped to GL"
+share_product ||--o{ product_gl_mapping : "mapped to GL"
+gl_account ||--o{ product_gl_mapping : "used in mapping"
+charge ||--o{ product_gl_mapping : "charge-specific mapping"
+payment_type ||--o{ product_gl_mapping : "payment type mapping"
+gl_account ||--o{ financial_activity : "activity account"
+gl_account ||--o{ accounting_rule : "debit account"
+gl_account ||--o{ accounting_rule : "credit account"
+office ||--o{ accounting_rule : "rules in"
+accounting_rule ||--o{ accounting_tag_rule : "has tags"
+code_value ||--o{ accounting_tag_rule : "tag"
+gl_account ||--o{ accounting_tag_rule : "tagged account"
+office ||--o{ gl_closure : "closures for"
+office ||--o{ trial_balance : "balance in"
+gl_account ||--o{ trial_balance : "balance of"
+provisioning_criteria ||--o{ provisioning_criteria_def : "definitions"
+provisioning_category ||--o{ provisioning_criteria_def : "for category"
+gl_account ||--o{ provisioning_criteria_def : "liability account"
+gl_account ||--o{ provisioning_criteria_def : "expense account"
+provisioning_entry ||--|| journal_entry : "creates"
+loan_product ||--o{ loan_product_provisioning : "provisioned"
+office ||--o{ loan_product_provisioning : "provisions in"
+provisioning_category ||--o{ loan_product_provisioning : "category"
+provisioning_criteria ||--o{ loan_product_provisioning : "criteria"
+gl_account ||--o{ loan_product_provisioning : "liability"
+gl_account ||--o{ loan_product_provisioning : "expense"
+payment_type ||--o{ payment_detail : "type of"
+
+' ============================================
+' FROM: fineract-erd-security.puml
+' ============================================
+
+entity "AppUser (m_appuser)" as appuser {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100) <<unique>>
+  * password : VARCHAR(255)
+  * email : VARCHAR(100)
+  * firstname : VARCHAR(100)
+  * lastname : VARCHAR(100)
+  --
+  * office_id : BIGINT <<FK>>
+  staff_id : BIGINT <<FK>>
+  --
+  ' Account Status
+  * nonexpired : BOOLEAN
+  * nonlocked : BOOLEAN
+  * nonexpired_credentials : BOOLEAN
+  * enabled : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  ' Password Management
+  * firsttime_login_remaining : BOOLEAN
+  * password_never_expires : BOOLEAN
+  last_time_password_updated : DATE
+  cannot_change_password : BOOLEAN
+  --
+  ' Self-Service
+  * is_self_service_user : BOOLEAN
+}
+entity "AppUserRole (m_appuser_role)" as appuser_role {
+  * appuser_id : BIGINT <<PK,FK>>
+  * role_id : BIGINT <<PK,FK>>
+}
+entity "Role (m_role)" as role {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  description : VARCHAR(500)
+  * is_disabled : BOOLEAN
+}
+entity "RolePermission (m_role_permission)" as role_permission {
+  * role_id : BIGINT <<PK,FK>>
+  * permission_id : BIGINT <<PK,FK>>
+}
+entity "Permission (m_permission)" as permission {
+  * id : BIGINT <<PK>>
+  --
+  * grouping : VARCHAR(45)
+  * code : VARCHAR(100) <<unique>>
+  * entity_name : VARCHAR(100)
+  * action_name : VARCHAR(100)
+  * can_maker_checker : BOOLEAN
+}
+entity "AppUserPreviousPassword (m_appuser_previous_password)" as appuser_prev_password {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * password : VARCHAR(255)
+  * removal_date : DATE
+}
+entity "AppUserClientMapping (m_selfservice_user_client_mapping)" as appuser_client_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+}
+entity "PasswordValidationPolicy (m_password_validation_policy)" as password_policy {
+  * id : BIGINT <<PK>>
+  --
+  * active : BOOLEAN
+  * description : VARCHAR(500)
+  * key : VARCHAR(255) <<unique>>
+}
+entity "TwoFactorConfiguration (twofactor_configuration)" as twofactor_config {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * authentication_token : VARCHAR(255)
+  * otp_delivery_method : VARCHAR(20)
+  * email : VARCHAR(100)
+  * phone_number : VARCHAR(20)
+  * is_enabled : BOOLEAN
+}
+entity "TFAccessToken (m_twofactor_access_token)" as tf_access_token {
+  * id : BIGINT <<PK>>
+  --
+  * token : VARCHAR(255) <<unique>>
+  * appuser_id : BIGINT <<FK>>
+  * valid_from : DATETIME
+  * valid_to : DATETIME
+  * enabled : BOOLEAN
+}
+entity "ApiKey (m_api_key)" as api_key {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * key_hash : VARCHAR(255) <<unique>>
+  * scopes : TEXT
+  * appuser_id : BIGINT <<FK>>
+  * rate_limit : INT
+  * expires_at : DATETIME
+  * is_active : BOOLEAN
+  created_date : DATETIME
+}
+entity "OAuth2Client (oauth_client_details)" as oauth_client {
+  * client_id : VARCHAR(255) <<PK>>
+  --
+  * client_secret : VARCHAR(255)
+  * resource_ids : VARCHAR(255)
+  * scope : VARCHAR(255)
+  * authorized_grant_types : VARCHAR(255)
+  * web_server_redirect_uri : VARCHAR(255)
+  * authorities : VARCHAR(255)
+  * access_token_validity : INT
+  * refresh_token_validity : INT
+  * additional_information : VARCHAR(4096)
+  * autoapprove : VARCHAR(255)
+}
+entity "LoginAttempt (m_login_attempt)" as login_attempt {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100)
+  * attempt_time : DATETIME
+  * ip_address : VARCHAR(50)
+  * user_agent : VARCHAR(255)
+  * is_successful : BOOLEAN
+  failure_reason : VARCHAR(255)
+}
+entity "UserSession (m_user_session)" as user_session {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * session_token : VARCHAR(255) <<unique>>
+  * ip_address : VARCHAR(50)
+  * user_agent : VARCHAR(255)
+  * created_at : DATETIME
+  * last_activity : DATETIME
+  * expires_at : DATETIME
+  * is_active : BOOLEAN
+}
+entity "SecurityAudit (m_security_audit)" as security_audit {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * action : VARCHAR(100)
+  * resource : VARCHAR(100)
+  * resource_id : BIGINT
+  * timestamp : DATETIME
+  * ip_address : VARCHAR(50)
+  * status : VARCHAR(50)
+  details : TEXT
+}
+entity "CommandSource (m_portfolio_command_source)" as command_source {
+  * id : BIGINT <<PK>>
+  --
+  * action_name : VARCHAR(100)
+  * entity_name : VARCHAR(100)
+  resource_id : BIGINT
+  --
+  * maker_id : BIGINT <<FK>>
+  * made_on_date : DATETIME
+  checker_id : BIGINT <<FK>>
+  checked_on_date : DATETIME
+  --
+  * api_get_url : VARCHAR(100)
+  resource_get_url : VARCHAR(100)
+  command_as_json : TEXT
+  --
+  * office_id : BIGINT <<FK>>
+  * processing_result_enum : SMALLINT
+  * status : VARCHAR(50)
+  result : TEXT
+  transaction_id : VARCHAR(100)
+  idempotency_key : VARCHAR(50)
+}
+entity "EntityAccess (m_entity_to_entity_access)" as entity_access {
+  * id : BIGINT <<PK>>
+  --
+  * entity_type : VARCHAR(50)
+  * entity_id : BIGINT
+  * access_type_code : VARCHAR(100)
+  second_entity_type : VARCHAR(50)
+  second_entity_id : BIGINT
+}
+entity "EntityRelation (m_entity_relation)" as entity_relation {
+  * id : BIGINT <<PK>>
+  --
+  * from_entity_type : SMALLINT
+  * to_entity_type : SMALLINT
+  * code_name : VARCHAR(50) <<unique>>
+}
+entity "EntityToEntityMapping (m_entity_to_entity_mapping)" as entity_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * rel_id : BIGINT <<FK>>
+  * from_id : BIGINT
+  * to_id : BIGINT
+  start_date : DATE
+  end_date : DATE
+}
+appuser ||--o{ appuser_role : "has roles"
+role ||--o{ appuser_role : "assigned to users"
+role ||--o{ role_permission : "has permissions"
+permission ||--o{ role_permission : "granted to roles"
+appuser ||--o{ appuser_prev_password : "password history"
+appuser ||--o{ appuser_client_mapping : "self-service clients"
+appuser ||--o| twofactor_config : "2FA config"
+appuser ||--o{ tf_access_token : "2FA tokens"
+appuser ||--o{ api_key : "API keys"
+appuser ||--o{ login_attempt : "login attempts"
+appuser ||--o{ user_session : "sessions"
+appuser ||--o{ security_audit : "audit trail"
+appuser ||--o{ command_source : "commands made"
+appuser ||--o{ command_source : "commands checked"
+entity_relation ||--o{ entity_mapping : "defines mapping"
+
+' ============================================
+' FROM: fineract-erd-infrastructure.puml
+' ============================================
+
+entity "ScheduledJobDetail (job)" as job {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * display_name : VARCHAR(200)
+  * cron_expression : VARCHAR(100)
+  * active : BOOLEAN
+  * currently_running : BOOLEAN
+  * last_run_history_id : BIGINT <<FK>>
+  --
+  job_key : VARCHAR(500)
+  initializing_error : TEXT
+  previous_run_start_time : DATETIME
+  next_run_time : DATETIME
+  --
+  * trigger_type : SMALLINT
+  * trigger_misfire_instruction : SMALLINT
+  * job_type : SMALLINT
+}
+entity "ScheduledJobRunHistory (job_run_history)" as job_run_history {
+  * id : BIGINT <<PK>>
+  --
+  * job_id : BIGINT <<FK>>
+  --
+  * status : VARCHAR(10)
+  * start_time : DATETIME
+  end_time : DATETIME
+  error_message : TEXT
+  error_log : TEXT
+  --
+  trigger_type : VARCHAR(25)
+  job_run_error_message : TEXT
+  job_run_error_log : TEXT
+}
+entity "JobParameter (job_parameters)" as job_parameter {
+  * job_id : BIGINT <<PK,FK>>
+  * parameter_name : VARCHAR(100) <<PK>>
+  * parameter_value : VARCHAR(200)
+}
+entity "SchedulerDetail (scheduler_detail)" as scheduler_detail {
+  * id : BIGINT <<PK>>
+  --
+  * is_suspended : BOOLEAN
+  execute_misfire_jobs : BOOLEAN
+  reset_scheduler_on_bootup : BOOLEAN
+}
+entity "Hook (m_hook)" as hook {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * is_active : BOOLEAN
+  created_date : DATE
+  last_updated_date : DATE
+  --
+  ugd_template_id : BIGINT <<FK>>
+}
+entity "HookTemplate (m_hook_templates)" as hook_template {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+}
+entity "HookConfiguration (m_hook_configuration)" as hook_config {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * field_type : VARCHAR(20)
+  * field_name : VARCHAR(100)
+  * field_value : VARCHAR(200)
+}
+entity "HookResource (m_hook_registered_events)" as hook_resource {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * entity_name : VARCHAR(50)
+  * action_name : VARCHAR(50)
+}
+entity "HookHistory (m_hook_history)" as hook_history {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * created_date : DATETIME
+  --
+  request : TEXT
+  response : TEXT
+  status : VARCHAR(50)
+  error_message : TEXT
+  retry_count : SMALLINT
+}
+entity "Schema (m_hook_schema)" as hook_schema {
+  * id : BIGINT <<PK>>
+  --
+  * hook_template_id : BIGINT <<FK>>
+  * field_type : VARCHAR(20)
+  * field_name : VARCHAR(100)
+  placeholder : VARCHAR(100)
+  optional : BOOLEAN
+}
+entity "Notification (notification)" as notification {
+  * id : BIGINT <<PK>>
+  --
+  * object_type : VARCHAR(50)
+  * object_identifier : BIGINT
+  * action : VARCHAR(50)
+  * actor : BIGINT
+  * is_system_generated : BOOLEAN
+  * created_at : DATETIME
+  --
+  notification_content : VARCHAR(255)
+  * is_read : BOOLEAN
+  * tenant_id : BIGINT
+  --
+  * user_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+}
+entity "NotificationMapper (notification_mapper)" as notification_mapper {
+  * id : BIGINT <<PK>>
+  --
+  * entity : VARCHAR(50)
+  * action : VARCHAR(50)
+  * template_id : BIGINT <<FK>>
+  * is_active : BOOLEAN
+}
+entity "SmsMessage (sms_messages_outbound)" as sms_message {
+  * id : BIGINT <<PK>>
+  --
+  external_id : VARCHAR(100) <<unique>>
+  --
+  * group_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * status_enum : INT
+  * mobile_no : VARCHAR(50)
+  * message : TEXT
+  --
+  submitted_on_date : DATE
+  delivered_on_date : DATE
+  campaign_id : BIGINT <<FK>>
+  --
+  provider_id : BIGINT <<FK>>
+  provider_status : VARCHAR(50)
+  provider_msg_id : VARCHAR(100)
+}
+entity "EmailMessage (m_email_outbound)" as email_message {
+  * id : BIGINT <<PK>>
+  --
+  * group_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * status_enum : INT
+  * email_address : VARCHAR(100)
+  * email_subject : VARCHAR(255)
+  * message : TEXT
+  --
+  sent_date : DATE
+  error_message : TEXT
+  campaign_id : BIGINT <<FK>>
+}
+entity "NotificationCampaign (m_notification_campaign)" as notification_campaign {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * type_enum : SMALLINT
+  * trigger_type_enum : SMALLINT
+  * recurrence : VARCHAR(100)
+  * recurrence_start_date : DATETIME
+  --
+  * is_active : BOOLEAN
+  * message : TEXT
+  * param_value : TEXT
+  --
+  last_trigger_date : DATETIME
+  next_trigger_date : DATETIME
+}
+entity "Report (m_report)" as report {
+  * id : BIGINT <<PK>>
+  --
+  * report_name : VARCHAR(100) <<unique>>
+  * report_type : VARCHAR(20)
+  * report_category : VARCHAR(45)
+  * report_sql : TEXT
+  * description : VARCHAR(1000)
+  * core_report : BOOLEAN
+  * use_report : BOOLEAN
+  * self_service_user_report : BOOLEAN
+}
+entity "ReportParameter (m_report_parameter)" as report_parameter {
+  * id : BIGINT <<PK>>
+  --
+  * report_id : BIGINT <<FK>>
+  * parameter_name : VARCHAR(100)
+  * parameter_variable : VARCHAR(100)
+  parameter_label : VARCHAR(100)
+  parameter_display_type : VARCHAR(100)
+  parameter_format_type : VARCHAR(100)
+  parameter_default_value : VARCHAR(100)
+}
+entity "ReportMailingJob (m_report_mailing_job)" as report_mailing_job {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * description : VARCHAR(200)
+  * start_datetime : DATETIME
+  * recurrence : VARCHAR(100)
+  --
+  * stretchy_report_id : BIGINT <<FK>>
+  * stretchy_report_param_map : TEXT
+  * email_recipients : VARCHAR(500)
+  * email_subject : VARCHAR(255)
+  * email_message : TEXT
+  * email_attachment_file_format : VARCHAR(10)
+  --
+  * is_active : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+  --
+  previous_run_datetime : DATETIME
+  next_run_datetime : DATETIME
+  previous_run_status : VARCHAR(10)
+  previous_run_error_log : TEXT
+  previous_run_error_message : TEXT
+  number_of_runs : INT
+}
+entity "ReportMailingJobRunHistory (m_report_mailing_job_run_history)" as report_mailing_job_run_history {
+  * id : BIGINT <<PK>>
+  --
+  * job_id : BIGINT <<FK>>
+  * start_datetime : DATETIME
+  * end_datetime : DATETIME
+  * status : VARCHAR(10)
+  error_message : TEXT
+  error_log : TEXT
+}
+entity "Template (m_template)" as template {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * text : TEXT
+  --
+  entity : INT
+  type : INT
+  --
+  mappers : TEXT
+}
+entity "TemplateMapper (m_template_entity_mapping)" as template_mapper {
+  * id : BIGINT <<PK>>
+  --
+  * template_id : BIGINT <<FK>>
+  * entity_name : VARCHAR(100)
+  * entity_id : BIGINT
+  * mapper_key : VARCHAR(100)
+  * mapper_value : VARCHAR(100)
+  * mapper_order : INT
+}
+entity "GlobalConfiguration (c_configuration)" as global_config {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * enabled : BOOLEAN
+  * value : BIGINT
+  date_value : DATE
+  string_value : VARCHAR(100)
+  * description : VARCHAR(300)
+  * is_trap_door : BOOLEAN
+}
+entity "ExternalService (m_external_service)" as external_service {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(150) <<unique>>
+}
+entity "ExternalServiceProperties (m_external_service_properties)" as external_service_properties {
+  * name : VARCHAR(150) <<PK>>
+  * external_service_id : BIGINT <<PK,FK>>
+  * value : VARCHAR(250)
+}
+entity "BusinessDate (m_business_date)" as business_date {
+  * id : BIGINT <<PK>>
+  --
+  * type : VARCHAR(100) <<unique>>
+  * date : DATE
+  * created_date : DATETIME
+  * last_modified_date : DATETIME
+  * created_by_id : BIGINT <<FK>>
+  * last_modified_by_id : BIGINT <<FK>>
+}
+entity "CacheRecord (m_cache)" as cache_record {
+  * id : BIGINT <<PK>>
+  --
+  * cache_type_enum : SMALLINT
+}
+entity "RegisteredTable (x_registered_table)" as registered_table {
+  * registered_table_name : VARCHAR(50) <<PK>>
+  --
+  * application_table_name : VARCHAR(50)
+  entity_subtype : VARCHAR(50)
+  * category : INT
+}
+entity "TableMetadata (x_table_metadata)" as table_metadata {
+  * id : BIGINT <<PK>>
+  --
+  * registered_table_name : VARCHAR(50) <<FK>>
+  * column_name : VARCHAR(100)
+  * column_type : VARCHAR(50)
+  * column_length : INT
+  * column_code : VARCHAR(100)
+  * is_columnNullable : BOOLEAN
+  * is_columnPrimaryKey : BOOLEAN
+  * is_columnUnique : BOOLEAN
+  * is_columnIndexed : BOOLEAN
+  * column_display_type : VARCHAR(50)
+  * column_label : VARCHAR(100)
+}
+entity "DataTable (m_datatable)" as datatable {
+  * id : BIGINT <<PK>>
+  --
+  * application_table_name : VARCHAR(50)
+  * registered_table_name : VARCHAR(50) <<unique>>
+  * entity_subtype : VARCHAR(50)
+  * system_defined : BOOLEAN
+  * multirow : BOOLEAN
+  * is_active : BOOLEAN
+}
+entity "Survey (ppi_surveys)" as survey {
+  * id : BIGINT <<PK>>
+  --
+  * country_code : VARCHAR(2)
+  * key : VARCHAR(32)
+  * name : VARCHAR(255)
+  description : VARCHAR(4096)
+  * valid_from : DATE
+  * valid_to : DATE
+}
+entity "Component (ppi_components)" as component {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * sequence_no : INT
+}
+entity "Question (ppi_questions)" as question {
+  * id : BIGINT <<PK>>
+  --
+  * component_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * sequence_no : INT
+}
+entity "Response (ppi_responses)" as response {
+  * id : BIGINT <<PK>>
+  --
+  * question_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * value : INT
+  * sequence_no : INT
+}
+entity "LookupTable (ppi_likelihoods)" as lookup_table {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * ppi_name : VARCHAR(255)
+  code : BIGINT
+  score_from : BIGINT
+  score_to : BIGINT
+}
+entity "Scorecard (ppi_scores)" as scorecard {
+  * id : BIGINT <<PK>>
+  --
+  * lookup_id : BIGINT <<FK>>
+  enabled : BOOLEAN
+  scorecard_value : DOUBLE
+}
+entity "Likelihood (m_survey_scorecards)" as likelihood {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * created_on : DATETIME
+}
+entity "Audit (m_audit)" as audit {
+  * id : BIGINT <<PK>>
+  --
+  * action_name : VARCHAR(100)
+  * entity_name : VARCHAR(100)
+  resource_id : BIGINT
+  subresource_id : BIGINT
+  --
+  * maker_id : BIGINT <<FK>>
+  * made_on_date : DATETIME
+  checker_id : BIGINT <<FK>>
+  checked_on_date : DATETIME
+  --
+  * processing_result_enum : SMALLINT
+  command_as_json : TEXT
+  * office_id : BIGINT <<FK>>
+  --
+  api_operation : VARCHAR(100)
+  resource : VARCHAR(100)
+  url : VARCHAR(500)
+}
+job ||--o{ job_run_history : "has history"
+job ||--o{ job_parameter : "has parameters"
+job ||--o| job_run_history : "last run"
+hook ||--o{ hook_config : "configured with"
+hook ||--o{ hook_resource : "listens to events"
+hook ||--o{ hook_history : "delivery history"
+hook ||--o| hook_template : "based on template"
+hook_template ||--o{ hook_schema : "defines schema"
+notification_mapper ||--o| template : "uses template"
+notification_campaign ||--o{ sms_message : "sends SMS"
+notification_campaign ||--o{ email_message : "sends emails"
+report ||--o{ report_parameter : "has parameters"
+report ||--o{ report_mailing_job : "scheduled for mailing"
+report_mailing_job ||--o{ report_mailing_job_run_history : "run history"
+template ||--o{ template_mapper : "entity mappings"
+external_service ||--o{ external_service_properties : "properties"
+registered_table ||--o{ table_metadata : "column metadata"
+survey ||--o{ component : "contains"
+survey ||--o{ lookup_table : "scoring tables"
+survey ||--o{ likelihood : "scorecards"
+component ||--o{ question : "contains"
+question ||--o{ response : "possible answers"
+lookup_table ||--o{ scorecard : "scores"
+
+' ============================================
+' FROM: fineract-erd-delinquency-provisioning.puml
+' ============================================
+
+entity "DelinquencyBucket (m_delinquency_bucket)" as delinquency_bucket {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * classification : VARCHAR(100)
+  * min_age_days : INT
+  * max_age_days : INT
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "DelinquencyRange (m_delinquency_range)" as delinquency_range {
+  * id : BIGINT <<PK>>
+  --
+  * classification : VARCHAR(100) <<unique>>
+  * min_age_days : INT
+  * max_age_days : INT
+}
+entity "DelinquencyBucketMappings (m_delinquency_bucket_mappings)" as delinquency_bucket_mappings {
+  * id : BIGINT <<PK>>
+  --
+  * delinquency_bucket_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+}
+entity "LoanDelinquencyTags (m_loan_delinquency_tags)" as loan_delinquency_tags {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+  --
+  * added_on_date : DATE
+  lifted_on_date : DATE
+}
+entity "LoanDelinquencyAction (m_loan_delinquency_action)" as loan_delinquency_action {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+  --
+  * action : VARCHAR(100)
+  * start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "LoanArrearsAging (m_loan_arrears_aging)" as loan_arrears_aging {
+  * loan_id : BIGINT <<PK,FK>>
+  --
+  * principal_overdue_derived : DECIMAL(19,6)
+  * interest_overdue_derived : DECIMAL(19,6)
+  * fee_charges_overdue_derived : DECIMAL(19,6)
+  * penalty_charges_overdue_derived : DECIMAL(19,6)
+  * total_overdue_derived : DECIMAL(19,6)
+  --
+  * overdue_since_date_derived : DATE
+}
+entity "ProvisioningCategory (m_provisioning_category)" as provisioning_category {
+  * id : BIGINT <<PK>>
+  --
+  * category_name : VARCHAR(100) <<unique>>
+  * description : VARCHAR(300)
+}
+entity "ProvisioningCriteria (m_provisioning_criteria)" as provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_name : VARCHAR(200) <<unique>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "ProvisioningCriteriaDefinition (m_provisioning_criteria_definition)" as provisioning_criteria_definition {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  * min_age : BIGINT
+  * max_age : BIGINT
+  * provision_percentage : DECIMAL(5,2)
+  * liability_account : BIGINT <<FK>>
+  * expense_account : BIGINT <<FK>>
+}
+entity "LoanProductProvisioningCriteria (m_loanproduct_provisioning_criteria)" as loan_product_provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+}
+entity "ProvisioningEntry (m_provisioning_entry)" as provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * journal_entry_id : BIGINT <<FK>>
+  * created_date : DATE
+  --
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "LoanProductProvisioningEntry (m_loanproduct_provisioning_entry)" as loan_product_provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * history_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  * product_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  * overdue_in_days : BIGINT
+  * reseve_amount : DECIMAL(19,6)
+  * liability_account : BIGINT <<FK>>
+  * expense_account : BIGINT <<FK>>
+}
+entity "CreditBureau (m_organisation_creditbureau)" as credit_bureau {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * product : VARCHAR(100)
+  * country : VARCHAR(50)
+  * implementationKey : VARCHAR(50)
+  * is_active : BOOLEAN
+}
+entity "CreditBureauConfiguration (m_creditbureau_configuration)" as credit_bureau_config {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * configkey : VARCHAR(50)
+  * value : TEXT
+  * description : VARCHAR(200)
+  * is_active : BOOLEAN
+}
+entity "CreditBureauLoanProductMapping (m_creditbureau_loanproduct_mapping)" as credit_bureau_loan_product_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * loanproduct_id : BIGINT <<FK>>
+  * is_creditcheck_mandatory : BOOLEAN
+  * skip_creditcheck_in_failure : BOOLEAN
+  * stale_period : INT
+  * is_active : BOOLEAN
+}
+entity "CreditBureauReport (m_creditbureau_report)" as credit_bureau_report {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * national_id : VARCHAR(100)
+  --
+  * created_date : DATE
+  * report_data : TEXT
+}
+entity "CreditBureauToken (m_creditbureau_token)" as credit_bureau_token {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100) <<unique>>
+  * token : VARCHAR(255)
+  * tokenType : VARCHAR(50)
+  * createdDate : DATETIME
+  * validTo : DATETIME
+}
+entity "LoanLossProvision (m_loan_loss_provision)" as loan_loss_provision {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  --
+  * provision_date : DATE
+  * provision_amount : DECIMAL(19,6)
+  * outstanding_loan_balance : DECIMAL(19,6)
+  * provision_percentage : DECIMAL(5,2)
+  --
+  * category_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+}
+entity "ImpairmentTracking (m_impairment_tracking)" as impairment_tracking {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * assessment_date : DATE
+  --
+  * impairment_stage : SMALLINT
+  * days_past_due : INT
+  * lifetime_expected_loss : DECIMAL(19,6)
+  * 12month_expected_loss : DECIMAL(19,6)
+  * provision_amount : DECIMAL(19,6)
+  --
+  * is_impaired : BOOLEAN
+  impairment_reason : TEXT
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+}
+entity "NPAConfiguration (m_npa_configuration)" as npa_config {
+  * id : BIGINT <<PK>>
+  --
+  * npa_days : INT
+  * include_interest_in_arrears : BOOLEAN
+  * include_fees_in_arrears : BOOLEAN
+  * include_penalties_in_arrears : BOOLEAN
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "LoanNPAStatus (m_loan_npa_status)" as loan_npa_status {
+  * loan_id : BIGINT <<PK,FK>>
+  --
+  * is_npa : BOOLEAN
+  * npa_date : DATE
+  npa_lifted_date : DATE
+  --
+  * days_in_npa : INT
+  * npa_amount : DECIMAL(19,6)
+}
+entity "PortfolioAtRisk (m_portfolio_at_risk)" as portfolio_at_risk {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * as_of_date : DATE
+  --
+  * par_1_amount : DECIMAL(19,6)
+  * par_1_percentage : DECIMAL(5,2)
+  * par_30_amount : DECIMAL(19,6)
+  * par_30_percentage : DECIMAL(5,2)
+  * par_60_amount : DECIMAL(19,6)
+  * par_60_percentage : DECIMAL(5,2)
+  * par_90_amount : DECIMAL(19,6)
+  * par_90_percentage : DECIMAL(5,2)
+  --
+  * total_portfolio : DECIMAL(19,6)
+  * total_loans_count : INT
+  * at_risk_loans_count : INT
+}
+entity "LoanWriteOff (m_loan_write_off)" as loan_write_off {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  --
+  * write_off_date : DATE
+  * write_off_amount : DECIMAL(19,6)
+  * outstanding_principal : DECIMAL(19,6)
+  * outstanding_interest : DECIMAL(19,6)
+  * outstanding_fees : DECIMAL(19,6)
+  * outstanding_penalties : DECIMAL(19,6)
+  --
+  * write_off_reason_id : BIGINT <<FK>>
+  write_off_reason_text : TEXT
+  --
+  approved_by : BIGINT <<FK>>
+  approved_date : DATE
+}
+entity "LoanRecovery (m_loan_recovery_repayment)" as loan_recovery {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  --
+  * recovery_date : DATE
+  * recovery_amount : DECIMAL(19,6)
+  * principal_recovered : DECIMAL(19,6)
+  * interest_recovered : DECIMAL(19,6)
+  * fees_recovered : DECIMAL(19,6)
+  * penalties_recovered : DECIMAL(19,6)
+  --
+  external_id : VARCHAR(100)
+  payment_detail_id : BIGINT <<FK>>
+}
+entity "WriteOffReason (m_code_value)" as write_off_reason {
+  * id : BIGINT <<PK>>
+  --
+  * code_id : BIGINT <<FK>>
+  * code_value : VARCHAR(100)
+  * order_position : INT
+  * is_active : BOOLEAN
+}
+delinquency_bucket ||--o{ delinquency_bucket_mappings : "contains ranges"
+delinquency_range ||--o{ delinquency_bucket_mappings : "mapped to buckets"
+delinquency_range ||--o{ loan_delinquency_tags : "tags loans"
+delinquency_range ||--o{ loan_delinquency_action : "triggers actions"
+provisioning_category ||--o{ provisioning_criteria_definition : "used in criteria"
+provisioning_criteria ||--o{ provisioning_criteria_definition : "has definitions"
+provisioning_criteria ||--o{ loan_product_provisioning_criteria : "applied to products"
+provisioning_criteria ||--o{ loan_loss_provision : "calculates provisions"
+provisioning_entry ||--o{ loan_product_provisioning_entry : "has details"
+provisioning_category ||--o{ loan_product_provisioning_entry : "categorizes"
+provisioning_category ||--o{ loan_loss_provision : "categorizes"
+credit_bureau ||--o{ credit_bureau_config : "configured with"
+credit_bureau ||--o{ credit_bureau_loan_product_mapping : "mapped to products"
+credit_bureau ||--o{ credit_bureau_report : "generates reports"
+write_off_reason ||--o{ loan_write_off : "reason for write-off"
+
+' ============================================
+' FROM: fineract-erd-shares.puml
+' ============================================
+
+entity "ShareProduct (m_share_product)" as share_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200)
+  * short_name : VARCHAR(4)
+  * description : VARCHAR(500)
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  --
+  ' Shares Configuration
+  * total_shares_issued : BIGINT
+  * shares_issued : BIGINT
+  * unit_price : DECIMAL(19,6)
+  * share_capital : DECIMAL(19,6)
+  * minimum_client_shares : BIGINT
+  * nominal_client_shares : BIGINT
+  * maximum_client_shares : BIGINT
+  --
+  ' Trading Configuration
+  * allow_dividends_for_inactive_clients : BOOLEAN
+  * lockin_period_frequency : INT
+  * lockin_period_frequency_enum : SMALLINT
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+  --
+  ' Market Price
+  * minimum_active_period_for_dividends : INT
+  * minimum_activa_period_frequency_enum : SMALLINT
+  --
+  ' Lifecycle
+  start_date : DATE
+  closedon_date : DATE
+  --
+  ' Audit
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "ShareProductMarketPrice (m_share_product_market_price)" as share_product_market_price {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * from_date : DATE
+  * share_value : DECIMAL(19,6)
+}
+entity "ShareProductDividendPayOutDetails (m_share_product_dividend_pay_out)" as share_product_dividend_payout {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * status : INT
+  --
+  * dividend_period_start_date : DATE
+  * dividend_period_end_date : DATE
+  * amount : DECIMAL(19,6)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "ShareAccount (m_share_account)" as share_account {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  --
+  ' Officers & Office
+  field_officer_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  savings_account_id : BIGINT <<FK>>
+  --
+  ' Share Configuration
+  * status_enum : SMALLINT
+  * account_type_enum : SMALLINT
+  * minimum_active_period_frequency : INT
+  * minimum_active_period_frequency_enum : SMALLINT
+  * lockin_period_frequency : INT
+  * lockin_period_frequency_enum : SMALLINT
+  --
+  ' Shares Tracking
+  * approved_shares : BIGINT
+  * pending_shares : BIGINT
+  * total_pending_shares : BIGINT
+  --
+  ' Derived Values
+  total_shares_derived : BIGINT
+  total_dividends_amount : DECIMAL(19,6)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  --
+  ' Unit Price
+  * unit_price : DECIMAL(19,6)
+  * share_capital : DECIMAL(19,6)
+  --
+  ' Lifecycle Dates
+  submittedon_date : DATE
+  submittedby_id : BIGINT <<FK>>
+  approvedon_date : DATE
+  approvedby_id : BIGINT <<FK>>
+  activatedon_date : DATE
+  activatedby_id : BIGINT <<FK>>
+  closedon_date : DATE
+  closedby_id : BIGINT <<FK>>
+  rejectedon_date : DATE
+  rejectedby_id : BIGINT <<FK>>
+  lockedin_until_date : DATE
+  --
+  ' Dividends
+  * allow_dividends_inactive_clients : BOOLEAN
+}
+entity "ShareAccountTransaction (m_share_account_transactions)" as share_account_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * transaction_date : DATE
+  * total_shares : BIGINT
+  * unit_price : DECIMAL(19,6)
+  * amount : DECIMAL(19,6)
+  * charge_amount : DECIMAL(19,6)
+  * amount_paid : DECIMAL(19,6)
+  --
+  * status_enum : SMALLINT
+  * type_enum : SMALLINT
+  * is_active : BOOLEAN
+  --
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' Audit
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "ShareAccountCharge (m_share_account_charge)" as share_account_charge {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  * amount_paid_derived : DECIMAL(19,6)
+  * amount_waived_derived : DECIMAL(19,6)
+  * amount_writtenoff_derived : DECIMAL(19,6)
+  * amount_outstanding_derived : DECIMAL(19,6)
+  --
+  * is_penalty : BOOLEAN
+  * is_paid_derived : BOOLEAN
+  * waived : BOOLEAN
+  * is_active : BOOLEAN
+}
+entity "ShareAccountChargePaidBy (m_share_account_charge_paid_by)" as share_account_charge_paid_by {
+  * id : BIGINT <<PK>>
+  --
+  * charge_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+}
+entity "ShareAccountDividendDetails (m_share_account_dividend_details)" as share_account_dividend_details {
+  * id : BIGINT <<PK>>
+  --
+  * dividend_pay_out_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  --
+  * status : INT
+  * amount : DECIMAL(19,6)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "SharePurchasePeriod (m_share_purchase_period)" as share_purchase_period {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * from_date : DATE
+  * to_date : DATE
+  * unit_price : DECIMAL(19,6)
+  * minimum_shares : BIGINT
+  * maximum_shares : BIGINT
+  * is_active : BOOLEAN
+}
+share_product ||--o{ share_product_market_price : "market prices"
+share_product ||--o{ share_product_dividend_payout : "dividend payouts"
+share_product ||--o{ share_account : "instantiated as"
+share_product ||--o{ share_purchase_period : "purchase periods"
+share_account ||--o{ share_account_transaction : "has transactions"
+share_account ||--o{ share_account_charge : "has charges"
+share_account ||--o{ share_account_dividend_details : "receives dividends"
+share_account_transaction ||--o{ share_account_charge_paid_by : "pays charges"
+share_account_charge ||--o{ share_account_charge_paid_by : "paid by transactions"
+share_product_dividend_payout ||--o{ share_account_dividend_details : "distributed to accounts"
+
+' ============================================
+' FROM: fineract-erd-additional.puml
+' ============================================
+
+entity "TaxGroup (m_tax_group)" as tax_group {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "TaxComponent (m_tax_component)" as tax_component {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * percentage : DECIMAL(19,6)
+  * debit_account_type_enum : SMALLINT
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_type_enum : SMALLINT
+  * credit_account_id : BIGINT <<FK>>
+  --
+  * start_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "TaxGroupMappings (m_tax_group_mappings)" as tax_group_mappings {
+  * id : BIGINT <<PK>>
+  --
+  * tax_group_id : BIGINT <<FK>>
+  * tax_component_id : BIGINT <<FK>>
+  * start_date : DATE
+  end_date : DATE
+}
+entity "TaxComponentHistory (m_tax_component_history)" as tax_component_history {
+  * id : BIGINT <<PK>>
+  --
+  * tax_component_id : BIGINT <<FK>>
+  * percentage : DECIMAL(19,6)
+  * start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "SavingsAccountTransactionTaxDetails (m_savings_account_transaction_tax_details)" as savings_transaction_tax {
+  * id : BIGINT <<PK>>
+  --
+  * savings_transaction_id : BIGINT <<FK>>
+  * tax_component_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+}
+entity "Meeting (m_meeting)" as meeting {
+  * id : BIGINT <<PK>>
+  --
+  * calendar_instance_id : BIGINT <<FK>>
+  * meeting_date : DATE
+}
+entity "ClientAttendance (m_meeting_attendance)" as client_attendance {
+  * id : BIGINT <<PK>>
+  --
+  * meeting_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * attendance_type_enum : SMALLINT
+}
+entity "CalendarInstance (m_calendar_instance)" as calendar_instance {
+  * id : BIGINT <<PK>>
+  --
+  * calendar_id : BIGINT <<FK>>
+  * entity_id : BIGINT
+  * entity_type_enum : SMALLINT
+}
+entity "InteropIdentifier (m_interop_identifier)" as interop_identifier {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * type : VARCHAR(32)
+  * sub_type : VARCHAR(32)
+  * a_value : VARCHAR(128)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "InteropKYCData (m_interop_kyc_data)" as interop_kyc_data {
+  * account_id : BIGINT <<PK,FK>>
+  --
+  * first_name : VARCHAR(100)
+  * middle_name : VARCHAR(100)
+  * last_name : VARCHAR(100)
+  * date_of_birth : DATE
+  * nationality : VARCHAR(50)
+  * merchant_classification_code : VARCHAR(10)
+}
+entity "AccountTransferDetails (m_account_transfer_details)" as account_transfer_details {
+  * id : BIGINT <<PK>>
+  --
+  * from_office_id : BIGINT <<FK>>
+  * to_office_id : BIGINT <<FK>>
+  --
+  * from_client_id : BIGINT <<FK>>
+  * to_client_id : BIGINT <<FK>>
+  --
+  * from_savings_account_id : BIGINT <<FK>>
+  * to_savings_account_id : BIGINT <<FK>>
+  --
+  from_loan_account_id : BIGINT <<FK>>
+  to_loan_account_id : BIGINT <<FK>>
+  --
+  * transfer_type : INT
+}
+entity "AccountTransferTransaction (m_account_transfer_transaction)" as account_transfer_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * account_transfer_details_id : BIGINT <<FK>>
+  --
+  * from_savings_transaction_id : BIGINT <<FK>>
+  * to_savings_transaction_id : BIGINT <<FK>>
+  --
+  from_loan_transaction_id : BIGINT <<FK>>
+  to_loan_transaction_id : BIGINT <<FK>>
+  --
+  * is_reversed : BOOLEAN
+  * transaction_date : DATE
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  * amount : DECIMAL(19,6)
+  description : VARCHAR(200)
+}
+entity "AccountTransferStandingInstruction (m_account_transfer_standing_instructions)" as standing_instruction {
+  * id : BIGINT <<PK>>
+  --
+  * account_transfer_details_id : BIGINT <<FK>>
+  * name : VARCHAR(200)
+  --
+  * priority : SMALLINT
+  * instruction_type : SMALLINT
+  * status : SMALLINT
+  * amount : DECIMAL(19,6)
+  --
+  * valid_from : DATE
+  valid_till : DATE
+  --
+  * recurrence_type : SMALLINT
+  * recurrence_frequency : SMALLINT
+  recurrence_interval : SMALLINT
+  recurrence_on_day : SMALLINT
+  recurrence_on_month : SMALLINT
+}
+entity "AccountAssociations (m_portfolio_account_associations)" as account_associations {
+  * id : BIGINT <<PK>>
+  --
+  * loan_account_id : BIGINT <<FK>>
+  * savings_account_id : BIGINT <<FK>>
+  * linked_loan_account_id : BIGINT <<FK>>
+  * linked_savings_account_id : BIGINT <<FK>>
+  --
+  * association_type_enum : SMALLINT
+  * is_active : BOOLEAN
+}
+entity "Teller (m_tellers)" as teller {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_id : BIGINT <<FK>>
+  --
+  * name : VARCHAR(50)
+  * description : VARCHAR(100)
+  * valid_from : DATE
+  valid_to : DATE
+  * state : SMALLINT
+  --
+  start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "Cashier (m_cashiers)" as cashier {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * teller_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * description : VARCHAR(100)
+  * start_date : DATE
+  * end_date : DATE
+  * full_day : BOOLEAN
+  --
+  start_time : VARCHAR(10)
+  end_time : VARCHAR(10)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "CashierTransaction (m_cashier_transactions)" as cashier_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * cashier_id : BIGINT <<FK>>
+  * txn_type : SMALLINT
+  * txn_amount : DECIMAL(19,6)
+  * txn_date : DATE
+  * txn_note : VARCHAR(200)
+  --
+  * currency_code : VARCHAR(3)
+  * entity_type : VARCHAR(50)
+  * entity_id : BIGINT
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "TellerCashManagement (m_teller_cash_management)" as teller_cash_management {
+  * id : BIGINT <<PK>>
+  --
+  * teller_id : BIGINT <<FK>>
+  * cashier_id : BIGINT <<FK>>
+  --
+  * txn_type : SMALLINT
+  * txn_amount : DECIMAL(19,6)
+  * txn_date : DATE
+  txn_note : VARCHAR(200)
+  --
+  * currency_code : VARCHAR(3)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "Note (m_note)" as note {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * group_id : BIGINT <<FK>>
+  * loan_id : BIGINT <<FK>>
+  * loan_transaction_id : BIGINT <<FK>>
+  * savings_account_id : BIGINT <<FK>>
+  --
+  * note_type_enum : SMALLINT
+  * note : VARCHAR(1000)
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "Document (m_document)" as document {
+  * id : BIGINT <<PK>>
+  --
+  * parent_entity_type : VARCHAR(50)
+  * parent_entity_id : BIGINT
+  * name : VARCHAR(250)
+  * file_name : VARCHAR(250)
+  * size : BIGINT
+  * type : VARCHAR(50)
+  * description : VARCHAR(1000)
+  * location : VARCHAR(500)
+  * storage_type_enum : INT
+}
+entity "Address (m_address)" as address {
+  * id : BIGINT <<PK>>
+  --
+  * street : VARCHAR(100)
+  address_line_1 : VARCHAR(100)
+  address_line_2 : VARCHAR(100)
+  address_line_3 : VARCHAR(100)
+  * town_village : VARCHAR(100)
+  * city : VARCHAR(100)
+  county : VARCHAR(100)
+  * state_province_id : BIGINT <<FK>>
+  * country_id : BIGINT <<FK>>
+  * postal_code : VARCHAR(10)
+  latitude : DECIMAL(10,8)
+  longitude : DECIMAL(11,8)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "FieldConfiguration (m_field_configuration)" as field_configuration {
+  * id : BIGINT <<PK>>
+  --
+  * entity : VARCHAR(100)
+  * table : VARCHAR(100)
+  * field : VARCHAR(100)
+  * is_enabled : BOOLEAN
+  * is_mandatory : BOOLEAN
+  * validation_regex : VARCHAR(500)
+}
+entity "ClientAddress (m_client_address)" as client_address {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * address_id : BIGINT <<FK>>
+  * address_type_id : BIGINT <<FK>>
+  * is_active : BOOLEAN
+}
+entity "FloatingRate (m_floating_rates)" as floating_rate {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200) <<unique>>
+  * is_base_lending_rate : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "FloatingRatePeriod (m_floating_rates_periods)" as floating_rate_period {
+  * id : BIGINT <<PK>>
+  --
+  * floating_rates_id : BIGINT <<FK>>
+  * from_date : DATE
+  * interest_rate : DECIMAL(19,6)
+  * is_differential_to_base_lending_rate : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+entity "InterestRateChart (m_interest_rate_chart)" as interest_rate_chart {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * description : VARCHAR(200)
+  * from_date : DATE
+  end_date : DATE
+  --
+  * is_primary_grouping_by_amount : BOOLEAN
+}
+entity "InterestRateChartSlab (m_interest_rate_slab)" as interest_rate_chart_slab {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_id : BIGINT <<FK>>
+  * description : VARCHAR(200)
+  --
+  * period_type_enum : SMALLINT
+  from_period : INT
+  to_period : INT
+  --
+  * amount_range_from : DECIMAL(19,6)
+  * amount_range_to : DECIMAL(19,6)
+  --
+  * annual_interest_rate : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+}
+entity "InterestIncentives (m_interest_incentives)" as interest_incentives {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_slab_id : BIGINT <<FK>>
+  * entity_type : SMALLINT
+  * attribute_name : SMALLINT
+  * condition_type : SMALLINT
+  * attribute_value : VARCHAR(50)
+  * incentive_type : SMALLINT
+  * amount : DECIMAL(19,6)
+}
+entity "ProductMix (m_product_mix)" as product_mix {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * restricted_product_id : BIGINT <<FK>>
+}
+entity "SelfBeneficiariesTPT (m_selfservice_beneficiaries_tpt)" as self_beneficiaries {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * name : VARCHAR(50)
+  * office_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  * account_type : SMALLINT
+  * transfer_limit : BIGINT
+  * is_active : BOOLEAN
+}
+tax_group ||--o{ tax_group_mappings : "contains components"
+tax_component ||--o{ tax_group_mappings : "part of groups"
+tax_component ||--o{ tax_component_history : "rate history"
+tax_component ||--o{ savings_transaction_tax : "applied to transactions"
+calendar_instance ||--o{ meeting : "scheduled meetings"
+meeting ||--o{ client_attendance : "attendance records"
+account_transfer_details ||--o{ account_transfer_transaction : "transfer transactions"
+account_transfer_details ||--o{ standing_instruction : "standing instructions"
+teller ||--o{ cashier : "has cashiers"
+cashier ||--o{ cashier_transaction : "processes transactions"
+teller ||--o{ teller_cash_management : "cash management"
+cashier ||--o{ teller_cash_management : "cash operations"
+address ||--o{ client_address : "client addresses"
+floating_rate ||--o{ floating_rate_period : "rate periods"
+interest_rate_chart ||--o{ interest_rate_chart_slab : "interest slabs"
+interest_rate_chart_slab ||--o{ interest_incentives : "incentives"
+
+
+@enduml

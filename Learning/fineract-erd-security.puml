@@ -1,0 +1,341 @@
+@startuml Apache Fineract Security & User Administration ERD
+
+' ============================================
+' APACHE FINERACT - SECURITY & USER ADMINISTRATION ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' USER & AUTHENTICATION ENTITIES
+' ============================================
+
+entity "AppUser (m_appuser)" as appuser {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100) <<unique>>
+  * password : VARCHAR(255)
+  * email : VARCHAR(100)
+  * firstname : VARCHAR(100)
+  * lastname : VARCHAR(100)
+  --
+  * office_id : BIGINT <<FK>>
+  staff_id : BIGINT <<FK>>
+  --
+  ' Account Status
+  * nonexpired : BOOLEAN
+  * nonlocked : BOOLEAN
+  * nonexpired_credentials : BOOLEAN
+  * enabled : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  ' Password Management
+  * firsttime_login_remaining : BOOLEAN
+  * password_never_expires : BOOLEAN
+  last_time_password_updated : DATE
+  cannot_change_password : BOOLEAN
+  --
+  ' Self-Service
+  * is_self_service_user : BOOLEAN
+}
+
+entity "AppUserRole (m_appuser_role)" as appuser_role {
+  * appuser_id : BIGINT <<PK,FK>>
+  * role_id : BIGINT <<PK,FK>>
+}
+
+entity "Role (m_role)" as role {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  description : VARCHAR(500)
+  * is_disabled : BOOLEAN
+}
+
+entity "RolePermission (m_role_permission)" as role_permission {
+  * role_id : BIGINT <<PK,FK>>
+  * permission_id : BIGINT <<PK,FK>>
+}
+
+entity "Permission (m_permission)" as permission {
+  * id : BIGINT <<PK>>
+  --
+  * grouping : VARCHAR(45)
+  * code : VARCHAR(100) <<unique>>
+  * entity_name : VARCHAR(100)
+  * action_name : VARCHAR(100)
+  * can_maker_checker : BOOLEAN
+}
+
+entity "AppUserPreviousPassword (m_appuser_previous_password)" as appuser_prev_password {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * password : VARCHAR(255)
+  * removal_date : DATE
+}
+
+entity "AppUserClientMapping (m_selfservice_user_client_mapping)" as appuser_client_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+}
+
+entity "PasswordValidationPolicy (m_password_validation_policy)" as password_policy {
+  * id : BIGINT <<PK>>
+  --
+  * active : BOOLEAN
+  * description : VARCHAR(500)
+  * key : VARCHAR(255) <<unique>>
+}
+
+' ============================================
+' TWO-FACTOR AUTHENTICATION
+' ============================================
+
+entity "TwoFactorConfiguration (twofactor_configuration)" as twofactor_config {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * authentication_token : VARCHAR(255)
+  * otp_delivery_method : VARCHAR(20)
+  * email : VARCHAR(100)
+  * phone_number : VARCHAR(20)
+  * is_enabled : BOOLEAN
+}
+
+entity "TFAccessToken (m_twofactor_access_token)" as tf_access_token {
+  * id : BIGINT <<PK>>
+  --
+  * token : VARCHAR(255) <<unique>>
+  * appuser_id : BIGINT <<FK>>
+  * valid_from : DATETIME
+  * valid_to : DATETIME
+  * enabled : BOOLEAN
+}
+
+' ============================================
+' API AUTHENTICATION
+' ============================================
+
+entity "ApiKey (m_api_key)" as api_key {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * key_hash : VARCHAR(255) <<unique>>
+  * scopes : TEXT
+  * appuser_id : BIGINT <<FK>>
+  * rate_limit : INT
+  * expires_at : DATETIME
+  * is_active : BOOLEAN
+  created_date : DATETIME
+}
+
+entity "OAuth2Client (oauth_client_details)" as oauth_client {
+  * client_id : VARCHAR(255) <<PK>>
+  --
+  * client_secret : VARCHAR(255)
+  * resource_ids : VARCHAR(255)
+  * scope : VARCHAR(255)
+  * authorized_grant_types : VARCHAR(255)
+  * web_server_redirect_uri : VARCHAR(255)
+  * authorities : VARCHAR(255)
+  * access_token_validity : INT
+  * refresh_token_validity : INT
+  * additional_information : VARCHAR(4096)
+  * autoapprove : VARCHAR(255)
+}
+
+' ============================================
+' SECURITY AUDIT
+' ============================================
+
+entity "LoginAttempt (m_login_attempt)" as login_attempt {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100)
+  * attempt_time : DATETIME
+  * ip_address : VARCHAR(50)
+  * user_agent : VARCHAR(255)
+  * is_successful : BOOLEAN
+  failure_reason : VARCHAR(255)
+}
+
+entity "UserSession (m_user_session)" as user_session {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * session_token : VARCHAR(255) <<unique>>
+  * ip_address : VARCHAR(50)
+  * user_agent : VARCHAR(255)
+  * created_at : DATETIME
+  * last_activity : DATETIME
+  * expires_at : DATETIME
+  * is_active : BOOLEAN
+}
+
+entity "SecurityAudit (m_security_audit)" as security_audit {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * action : VARCHAR(100)
+  * resource : VARCHAR(100)
+  * resource_id : BIGINT
+  * timestamp : DATETIME
+  * ip_address : VARCHAR(50)
+  * status : VARCHAR(50)
+  details : TEXT
+}
+
+' ============================================
+' COMMAND SOURCE (MAKER-CHECKER)
+' ============================================
+
+entity "CommandSource (m_portfolio_command_source)" as command_source {
+  * id : BIGINT <<PK>>
+  --
+  * action_name : VARCHAR(100)
+  * entity_name : VARCHAR(100)
+  resource_id : BIGINT
+  --
+  * maker_id : BIGINT <<FK>>
+  * made_on_date : DATETIME
+  checker_id : BIGINT <<FK>>
+  checked_on_date : DATETIME
+  --
+  * api_get_url : VARCHAR(100)
+  resource_get_url : VARCHAR(100)
+  command_as_json : TEXT
+  --
+  * office_id : BIGINT <<FK>>
+  * processing_result_enum : SMALLINT
+  * status : VARCHAR(50)
+  result : TEXT
+  transaction_id : VARCHAR(100)
+  idempotency_key : VARCHAR(50)
+}
+
+' ============================================
+' ENTITY ACCESS CONTROL
+' ============================================
+
+entity "EntityAccess (m_entity_to_entity_access)" as entity_access {
+  * id : BIGINT <<PK>>
+  --
+  * entity_type : VARCHAR(50)
+  * entity_id : BIGINT
+  * access_type_code : VARCHAR(100)
+  second_entity_type : VARCHAR(50)
+  second_entity_id : BIGINT
+}
+
+entity "EntityRelation (m_entity_relation)" as entity_relation {
+  * id : BIGINT <<PK>>
+  --
+  * from_entity_type : SMALLINT
+  * to_entity_type : SMALLINT
+  * code_name : VARCHAR(50) <<unique>>
+}
+
+entity "EntityToEntityMapping (m_entity_to_entity_mapping)" as entity_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * rel_id : BIGINT <<FK>>
+  * from_id : BIGINT
+  * to_id : BIGINT
+  start_date : DATE
+  end_date : DATE
+}
+
+' ============================================
+' RELATIONSHIPS - USER & ROLES
+' ============================================
+
+appuser ||--o{ appuser_role : "has roles"
+role ||--o{ appuser_role : "assigned to users"
+
+role ||--o{ role_permission : "has permissions"
+permission ||--o{ role_permission : "granted to roles"
+
+appuser ||--o{ appuser_prev_password : "password history"
+appuser ||--o{ appuser_client_mapping : "self-service clients"
+
+' ============================================
+' RELATIONSHIPS - AUTHENTICATION
+' ============================================
+
+appuser ||--o| twofactor_config : "2FA config"
+appuser ||--o{ tf_access_token : "2FA tokens"
+appuser ||--o{ api_key : "API keys"
+
+' ============================================
+' RELATIONSHIPS - AUDIT & SECURITY
+' ============================================
+
+appuser ||--o{ login_attempt : "login attempts"
+appuser ||--o{ user_session : "sessions"
+appuser ||--o{ security_audit : "audit trail"
+
+' ============================================
+' RELATIONSHIPS - MAKER-CHECKER
+' ============================================
+
+appuser ||--o{ command_source : "commands made"
+appuser ||--o{ command_source : "commands checked"
+
+' ============================================
+' RELATIONSHIPS - ENTITY ACCESS
+' ============================================
+
+entity_relation ||--o{ entity_mapping : "defines mapping"
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of appuser
+  Core user entity with:
+  - Basic authentication (username/password)
+  - Account status flags
+  - Password policy enforcement
+  - Self-service user support
+  - Office-level data scoping
+end note
+
+note right of role
+  Roles contain sets of permissions
+  Examples:
+  - Super User
+  - Loan Officer
+  - Branch Manager
+  - Checker
+  - Read-only User
+end note
+
+note right of permission
+  Granular permissions like:
+  - READ_LOAN
+  - CREATE_LOAN
+  - APPROVE_LOAN
+  - DISBURSE_LOAN
+  - APPROVE_LOAN_CHECKER
+  - ALL_FUNCTIONS
+end note
+
+note right of command_source
+  Maker-Checker pattern implementation
+  Stores pending commands requiring approval
+  Status: PENDING, APPROVED, REJECTED
+end note
+
+note right of twofactor_config
+  Two-Factor Authentication support:
+  - TOTP (Google Authenticator)
+  - SMS OTP
+  - Email OTP
+end note
+
+@enduml

@@ -1,0 +1,628 @@
+@startuml Apache Fineract Infrastructure & Configuration ERD
+
+' ============================================
+' APACHE FINERACT - INFRASTRUCTURE & CONFIGURATION ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' BATCH JOBS & SCHEDULER
+' ============================================
+
+entity "ScheduledJobDetail (job)" as job {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * display_name : VARCHAR(200)
+  * cron_expression : VARCHAR(100)
+  * active : BOOLEAN
+  * currently_running : BOOLEAN
+  * last_run_history_id : BIGINT <<FK>>
+  --
+  job_key : VARCHAR(500)
+  initializing_error : TEXT
+  previous_run_start_time : DATETIME
+  next_run_time : DATETIME
+  --
+  * trigger_type : SMALLINT
+  * trigger_misfire_instruction : SMALLINT
+  * job_type : SMALLINT
+}
+
+entity "ScheduledJobRunHistory (job_run_history)" as job_run_history {
+  * id : BIGINT <<PK>>
+  --
+  * job_id : BIGINT <<FK>>
+  --
+  * status : VARCHAR(10)
+  * start_time : DATETIME
+  end_time : DATETIME
+  error_message : TEXT
+  error_log : TEXT
+  --
+  trigger_type : VARCHAR(25)
+  job_run_error_message : TEXT
+  job_run_error_log : TEXT
+}
+
+entity "JobParameter (job_parameters)" as job_parameter {
+  * job_id : BIGINT <<PK,FK>>
+  * parameter_name : VARCHAR(100) <<PK>>
+  * parameter_value : VARCHAR(200)
+}
+
+entity "SchedulerDetail (scheduler_detail)" as scheduler_detail {
+  * id : BIGINT <<PK>>
+  --
+  * is_suspended : BOOLEAN
+  execute_misfire_jobs : BOOLEAN
+  reset_scheduler_on_bootup : BOOLEAN
+}
+
+' ============================================
+' WEBHOOKS & INTEGRATION
+' ============================================
+
+entity "Hook (m_hook)" as hook {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * is_active : BOOLEAN
+  created_date : DATE
+  last_updated_date : DATE
+  --
+  ugd_template_id : BIGINT <<FK>>
+}
+
+entity "HookTemplate (m_hook_templates)" as hook_template {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+}
+
+entity "HookConfiguration (m_hook_configuration)" as hook_config {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * field_type : VARCHAR(20)
+  * field_name : VARCHAR(100)
+  * field_value : VARCHAR(200)
+}
+
+entity "HookResource (m_hook_registered_events)" as hook_resource {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * entity_name : VARCHAR(50)
+  * action_name : VARCHAR(50)
+}
+
+entity "HookHistory (m_hook_history)" as hook_history {
+  * id : BIGINT <<PK>>
+  --
+  * hook_id : BIGINT <<FK>>
+  * created_date : DATETIME
+  --
+  request : TEXT
+  response : TEXT
+  status : VARCHAR(50)
+  error_message : TEXT
+  retry_count : SMALLINT
+}
+
+entity "Schema (m_hook_schema)" as hook_schema {
+  * id : BIGINT <<PK>>
+  --
+  * hook_template_id : BIGINT <<FK>>
+  * field_type : VARCHAR(20)
+  * field_name : VARCHAR(100)
+  placeholder : VARCHAR(100)
+  optional : BOOLEAN
+}
+
+' ============================================
+' NOTIFICATIONS
+' ============================================
+
+entity "Notification (notification)" as notification {
+  * id : BIGINT <<PK>>
+  --
+  * object_type : VARCHAR(50)
+  * object_identifier : BIGINT
+  * action : VARCHAR(50)
+  * actor : BIGINT
+  * is_system_generated : BOOLEAN
+  * created_at : DATETIME
+  --
+  notification_content : VARCHAR(255)
+  * is_read : BOOLEAN
+  * tenant_id : BIGINT
+  --
+  * user_id : BIGINT <<FK>>
+  office_id : BIGINT <<FK>>
+}
+
+entity "NotificationMapper (notification_mapper)" as notification_mapper {
+  * id : BIGINT <<PK>>
+  --
+  * entity : VARCHAR(50)
+  * action : VARCHAR(50)
+  * template_id : BIGINT <<FK>>
+  * is_active : BOOLEAN
+}
+
+entity "SmsMessage (sms_messages_outbound)" as sms_message {
+  * id : BIGINT <<PK>>
+  --
+  external_id : VARCHAR(100) <<unique>>
+  --
+  * group_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * status_enum : INT
+  * mobile_no : VARCHAR(50)
+  * message : TEXT
+  --
+  submitted_on_date : DATE
+  delivered_on_date : DATE
+  campaign_id : BIGINT <<FK>>
+  --
+  provider_id : BIGINT <<FK>>
+  provider_status : VARCHAR(50)
+  provider_msg_id : VARCHAR(100)
+}
+
+entity "EmailMessage (m_email_outbound)" as email_message {
+  * id : BIGINT <<PK>>
+  --
+  * group_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * status_enum : INT
+  * email_address : VARCHAR(100)
+  * email_subject : VARCHAR(255)
+  * message : TEXT
+  --
+  sent_date : DATE
+  error_message : TEXT
+  campaign_id : BIGINT <<FK>>
+}
+
+entity "NotificationCampaign (m_notification_campaign)" as notification_campaign {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * type_enum : SMALLINT
+  * trigger_type_enum : SMALLINT
+  * recurrence : VARCHAR(100)
+  * recurrence_start_date : DATETIME
+  --
+  * is_active : BOOLEAN
+  * message : TEXT
+  * param_value : TEXT
+  --
+  last_trigger_date : DATETIME
+  next_trigger_date : DATETIME
+}
+
+' ============================================
+' REPORTS
+' ============================================
+
+entity "Report (m_report)" as report {
+  * id : BIGINT <<PK>>
+  --
+  * report_name : VARCHAR(100) <<unique>>
+  * report_type : VARCHAR(20)
+  * report_category : VARCHAR(45)
+  * report_sql : TEXT
+  * description : VARCHAR(1000)
+  * core_report : BOOLEAN
+  * use_report : BOOLEAN
+  * self_service_user_report : BOOLEAN
+}
+
+entity "ReportParameter (m_report_parameter)" as report_parameter {
+  * id : BIGINT <<PK>>
+  --
+  * report_id : BIGINT <<FK>>
+  * parameter_name : VARCHAR(100)
+  * parameter_variable : VARCHAR(100)
+  parameter_label : VARCHAR(100)
+  parameter_display_type : VARCHAR(100)
+  parameter_format_type : VARCHAR(100)
+  parameter_default_value : VARCHAR(100)
+}
+
+entity "ReportMailingJob (m_report_mailing_job)" as report_mailing_job {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * description : VARCHAR(200)
+  * start_datetime : DATETIME
+  * recurrence : VARCHAR(100)
+  --
+  * stretchy_report_id : BIGINT <<FK>>
+  * stretchy_report_param_map : TEXT
+  * email_recipients : VARCHAR(500)
+  * email_subject : VARCHAR(255)
+  * email_message : TEXT
+  * email_attachment_file_format : VARCHAR(10)
+  --
+  * is_active : BOOLEAN
+  * is_deleted : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+  --
+  previous_run_datetime : DATETIME
+  next_run_datetime : DATETIME
+  previous_run_status : VARCHAR(10)
+  previous_run_error_log : TEXT
+  previous_run_error_message : TEXT
+  number_of_runs : INT
+}
+
+entity "ReportMailingJobRunHistory (m_report_mailing_job_run_history)" as report_mailing_job_run_history {
+  * id : BIGINT <<PK>>
+  --
+  * job_id : BIGINT <<FK>>
+  * start_datetime : DATETIME
+  * end_datetime : DATETIME
+  * status : VARCHAR(10)
+  error_message : TEXT
+  error_log : TEXT
+}
+
+' ============================================
+' TEMPLATES
+' ============================================
+
+entity "Template (m_template)" as template {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * text : TEXT
+  --
+  entity : INT
+  type : INT
+  --
+  mappers : TEXT
+}
+
+entity "TemplateMapper (m_template_entity_mapping)" as template_mapper {
+  * id : BIGINT <<PK>>
+  --
+  * template_id : BIGINT <<FK>>
+  * entity_name : VARCHAR(100)
+  * entity_id : BIGINT
+  * mapper_key : VARCHAR(100)
+  * mapper_value : VARCHAR(100)
+  * mapper_order : INT
+}
+
+' ============================================
+' CONFIGURATION
+' ============================================
+
+entity "GlobalConfiguration (c_configuration)" as global_config {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * enabled : BOOLEAN
+  * value : BIGINT
+  date_value : DATE
+  string_value : VARCHAR(100)
+  * description : VARCHAR(300)
+  * is_trap_door : BOOLEAN
+}
+
+entity "ExternalService (m_external_service)" as external_service {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(150) <<unique>>
+}
+
+entity "ExternalServiceProperties (m_external_service_properties)" as external_service_properties {
+  * name : VARCHAR(150) <<PK>>
+  * external_service_id : BIGINT <<PK,FK>>
+  * value : VARCHAR(250)
+}
+
+entity "BusinessDate (m_business_date)" as business_date {
+  * id : BIGINT <<PK>>
+  --
+  * type : VARCHAR(100) <<unique>>
+  * date : DATE
+  * created_date : DATETIME
+  * last_modified_date : DATETIME
+  * created_by_id : BIGINT <<FK>>
+  * last_modified_by_id : BIGINT <<FK>>
+}
+
+entity "CacheRecord (m_cache)" as cache_record {
+  * id : BIGINT <<PK>>
+  --
+  * cache_type_enum : SMALLINT
+}
+
+' ============================================
+' DATA TABLES & CUSTOM FIELDS
+' ============================================
+
+entity "RegisteredTable (x_registered_table)" as registered_table {
+  * registered_table_name : VARCHAR(50) <<PK>>
+  --
+  * application_table_name : VARCHAR(50)
+  entity_subtype : VARCHAR(50)
+  * category : INT
+}
+
+entity "TableMetadata (x_table_metadata)" as table_metadata {
+  * id : BIGINT <<PK>>
+  --
+  * registered_table_name : VARCHAR(50) <<FK>>
+  * column_name : VARCHAR(100)
+  * column_type : VARCHAR(50)
+  * column_length : INT
+  * column_code : VARCHAR(100)
+  * is_columnNullable : BOOLEAN
+  * is_columnPrimaryKey : BOOLEAN
+  * is_columnUnique : BOOLEAN
+  * is_columnIndexed : BOOLEAN
+  * column_display_type : VARCHAR(50)
+  * column_label : VARCHAR(100)
+}
+
+entity "DataTable (m_datatable)" as datatable {
+  * id : BIGINT <<PK>>
+  --
+  * application_table_name : VARCHAR(50)
+  * registered_table_name : VARCHAR(50) <<unique>>
+  * entity_subtype : VARCHAR(50)
+  * system_defined : BOOLEAN
+  * multirow : BOOLEAN
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' SURVEY & SCORING
+' ============================================
+
+entity "Survey (ppi_surveys)" as survey {
+  * id : BIGINT <<PK>>
+  --
+  * country_code : VARCHAR(2)
+  * key : VARCHAR(32)
+  * name : VARCHAR(255)
+  description : VARCHAR(4096)
+  * valid_from : DATE
+  * valid_to : DATE
+}
+
+entity "Component (ppi_components)" as component {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * sequence_no : INT
+}
+
+entity "Question (ppi_questions)" as question {
+  * id : BIGINT <<PK>>
+  --
+  * component_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * sequence_no : INT
+}
+
+entity "Response (ppi_responses)" as response {
+  * id : BIGINT <<PK>>
+  --
+  * question_id : BIGINT <<FK>>
+  * key : VARCHAR(32)
+  * text : VARCHAR(255)
+  description : VARCHAR(4096)
+  * value : INT
+  * sequence_no : INT
+}
+
+entity "LookupTable (ppi_likelihoods)" as lookup_table {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * ppi_name : VARCHAR(255)
+  code : BIGINT
+  score_from : BIGINT
+  score_to : BIGINT
+}
+
+entity "Scorecard (ppi_scores)" as scorecard {
+  * id : BIGINT <<PK>>
+  --
+  * lookup_id : BIGINT <<FK>>
+  enabled : BOOLEAN
+  scorecard_value : DOUBLE
+}
+
+entity "Likelihood (m_survey_scorecards)" as likelihood {
+  * id : BIGINT <<PK>>
+  --
+  * survey_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * created_on : DATETIME
+}
+
+' ============================================
+' AUDIT
+' ============================================
+
+entity "Audit (m_audit)" as audit {
+  * id : BIGINT <<PK>>
+  --
+  * action_name : VARCHAR(100)
+  * entity_name : VARCHAR(100)
+  resource_id : BIGINT
+  subresource_id : BIGINT
+  --
+  * maker_id : BIGINT <<FK>>
+  * made_on_date : DATETIME
+  checker_id : BIGINT <<FK>>
+  checked_on_date : DATETIME
+  --
+  * processing_result_enum : SMALLINT
+  command_as_json : TEXT
+  * office_id : BIGINT <<FK>>
+  --
+  api_operation : VARCHAR(100)
+  resource : VARCHAR(100)
+  url : VARCHAR(500)
+}
+
+' ============================================
+' RELATIONSHIPS - JOBS
+' ============================================
+
+job ||--o{ job_run_history : "has history"
+job ||--o{ job_parameter : "has parameters"
+job ||--o| job_run_history : "last run"
+
+' ============================================
+' RELATIONSHIPS - WEBHOOKS
+' ============================================
+
+hook ||--o{ hook_config : "configured with"
+hook ||--o{ hook_resource : "listens to events"
+hook ||--o{ hook_history : "delivery history"
+hook ||--o| hook_template : "based on template"
+
+hook_template ||--o{ hook_schema : "defines schema"
+
+' ============================================
+' RELATIONSHIPS - NOTIFICATIONS
+' ============================================
+
+notification_mapper ||--o| template : "uses template"
+
+notification_campaign ||--o{ sms_message : "sends SMS"
+notification_campaign ||--o{ email_message : "sends emails"
+
+' ============================================
+' RELATIONSHIPS - REPORTS
+' ============================================
+
+report ||--o{ report_parameter : "has parameters"
+report ||--o{ report_mailing_job : "scheduled for mailing"
+
+report_mailing_job ||--o{ report_mailing_job_run_history : "run history"
+
+' ============================================
+' RELATIONSHIPS - TEMPLATES
+' ============================================
+
+template ||--o{ template_mapper : "entity mappings"
+
+' ============================================
+' RELATIONSHIPS - CONFIGURATION
+' ============================================
+
+external_service ||--o{ external_service_properties : "properties"
+
+' ============================================
+' RELATIONSHIPS - DATA TABLES
+' ============================================
+
+registered_table ||--o{ table_metadata : "column metadata"
+
+' ============================================
+' RELATIONSHIPS - SURVEY
+' ============================================
+
+survey ||--o{ component : "contains"
+survey ||--o{ lookup_table : "scoring tables"
+survey ||--o{ likelihood : "scorecards"
+
+component ||--o{ question : "contains"
+question ||--o{ response : "possible answers"
+lookup_table ||--o{ scorecard : "scores"
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of job
+  Scheduled batch jobs:
+  - COB (Close of Business)
+  - Interest Posting
+  - Loan Arrears Aging
+  - Apply Charges
+  - Generate Reports
+  30+ system jobs
+end note
+
+note right of hook
+  Webhooks for external integration:
+  - Event-driven notifications
+  - Real-time data sync
+  - Payment gateway callbacks
+  - Third-party app integration
+end note
+
+note right of notification
+  In-app notification system
+  Supports:
+  - User actions
+  - System events
+  - Office-level filtering
+end note
+
+note right of report
+  Stretchy reports with:
+  - Parameterized SQL queries
+  - Multiple output formats
+  - Self-service user reports
+  - Scheduled email delivery
+end note
+
+note right of template
+  Template engine for:
+  - SMS messages
+  - Emails
+  - Documents
+  - Receipts
+  Uses Mustache syntax
+end note
+
+note right of global_config
+  System-wide configuration:
+  - Maker-checker required
+  - Reschedule future repayments
+  - Days in year calculation
+  - Office-specific date config
+end note
+
+note right of business_date
+  Multi-tenant business date:
+  - Business date
+  - COB date
+  - Independent of system date
+  - Per-tenant configuration
+end note
+
+note right of survey
+  PPI (Progress out of Poverty Index)
+  scoring system for impact measurement
+end note
+
+@enduml

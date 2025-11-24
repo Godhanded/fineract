@@ -1,0 +1,694 @@
+@startuml Apache Fineract Additional Entities ERD
+
+' ============================================
+' APACHE FINERACT - ADDITIONAL ENTITIES ERD
+' Tax, Meeting, Interop, Teller, Transfers, etc.
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' TAX ENTITIES
+' ============================================
+
+entity "TaxGroup (m_tax_group)" as tax_group {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "TaxComponent (m_tax_component)" as tax_component {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * percentage : DECIMAL(19,6)
+  * debit_account_type_enum : SMALLINT
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_type_enum : SMALLINT
+  * credit_account_id : BIGINT <<FK>>
+  --
+  * start_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "TaxGroupMappings (m_tax_group_mappings)" as tax_group_mappings {
+  * id : BIGINT <<PK>>
+  --
+  * tax_group_id : BIGINT <<FK>>
+  * tax_component_id : BIGINT <<FK>>
+  * start_date : DATE
+  end_date : DATE
+}
+
+entity "TaxComponentHistory (m_tax_component_history)" as tax_component_history {
+  * id : BIGINT <<PK>>
+  --
+  * tax_component_id : BIGINT <<FK>>
+  * percentage : DECIMAL(19,6)
+  * start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "SavingsAccountTransactionTaxDetails (m_savings_account_transaction_tax_details)" as savings_transaction_tax {
+  * id : BIGINT <<PK>>
+  --
+  * savings_transaction_id : BIGINT <<FK>>
+  * tax_component_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' MEETING & ATTENDANCE
+' ============================================
+
+entity "Meeting (m_meeting)" as meeting {
+  * id : BIGINT <<PK>>
+  --
+  * calendar_instance_id : BIGINT <<FK>>
+  * meeting_date : DATE
+}
+
+entity "ClientAttendance (m_meeting_attendance)" as client_attendance {
+  * id : BIGINT <<PK>>
+  --
+  * meeting_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * attendance_type_enum : SMALLINT
+}
+
+entity "CalendarInstance (m_calendar_instance)" as calendar_instance {
+  * id : BIGINT <<PK>>
+  --
+  * calendar_id : BIGINT <<FK>>
+  * entity_id : BIGINT
+  * entity_type_enum : SMALLINT
+}
+
+' ============================================
+' INTEROPERABILITY (FINERACT CN / MOJALOOP)
+' ============================================
+
+entity "InteropIdentifier (m_interop_identifier)" as interop_identifier {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * type : VARCHAR(32)
+  * sub_type : VARCHAR(32)
+  * a_value : VARCHAR(128)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "InteropKYCData (m_interop_kyc_data)" as interop_kyc_data {
+  * account_id : BIGINT <<PK,FK>>
+  --
+  * first_name : VARCHAR(100)
+  * middle_name : VARCHAR(100)
+  * last_name : VARCHAR(100)
+  * date_of_birth : DATE
+  * nationality : VARCHAR(50)
+  * merchant_classification_code : VARCHAR(10)
+}
+
+' ============================================
+' ACCOUNT TRANSFERS
+' ============================================
+
+entity "AccountTransferDetails (m_account_transfer_details)" as account_transfer_details {
+  * id : BIGINT <<PK>>
+  --
+  * from_office_id : BIGINT <<FK>>
+  * to_office_id : BIGINT <<FK>>
+  --
+  * from_client_id : BIGINT <<FK>>
+  * to_client_id : BIGINT <<FK>>
+  --
+  * from_savings_account_id : BIGINT <<FK>>
+  * to_savings_account_id : BIGINT <<FK>>
+  --
+  from_loan_account_id : BIGINT <<FK>>
+  to_loan_account_id : BIGINT <<FK>>
+  --
+  * transfer_type : INT
+}
+
+entity "AccountTransferTransaction (m_account_transfer_transaction)" as account_transfer_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * account_transfer_details_id : BIGINT <<FK>>
+  --
+  * from_savings_transaction_id : BIGINT <<FK>>
+  * to_savings_transaction_id : BIGINT <<FK>>
+  --
+  from_loan_transaction_id : BIGINT <<FK>>
+  to_loan_transaction_id : BIGINT <<FK>>
+  --
+  * is_reversed : BOOLEAN
+  * transaction_date : DATE
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  * amount : DECIMAL(19,6)
+  description : VARCHAR(200)
+}
+
+entity "AccountTransferStandingInstruction (m_account_transfer_standing_instructions)" as standing_instruction {
+  * id : BIGINT <<PK>>
+  --
+  * account_transfer_details_id : BIGINT <<FK>>
+  * name : VARCHAR(200)
+  --
+  * priority : SMALLINT
+  * instruction_type : SMALLINT
+  * status : SMALLINT
+  * amount : DECIMAL(19,6)
+  --
+  * valid_from : DATE
+  valid_till : DATE
+  --
+  * recurrence_type : SMALLINT
+  * recurrence_frequency : SMALLINT
+  recurrence_interval : SMALLINT
+  recurrence_on_day : SMALLINT
+  recurrence_on_month : SMALLINT
+}
+
+entity "AccountAssociations (m_portfolio_account_associations)" as account_associations {
+  * id : BIGINT <<PK>>
+  --
+  * loan_account_id : BIGINT <<FK>>
+  * savings_account_id : BIGINT <<FK>>
+  * linked_loan_account_id : BIGINT <<FK>>
+  * linked_savings_account_id : BIGINT <<FK>>
+  --
+  * association_type_enum : SMALLINT
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' TELLER & CASHIER
+' ============================================
+
+entity "Teller (m_tellers)" as teller {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * debit_account_id : BIGINT <<FK>>
+  * credit_account_id : BIGINT <<FK>>
+  --
+  * name : VARCHAR(50)
+  * description : VARCHAR(100)
+  * valid_from : DATE
+  valid_to : DATE
+  * state : SMALLINT
+  --
+  start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "Cashier (m_cashiers)" as cashier {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * teller_id : BIGINT <<FK>>
+  * staff_id : BIGINT <<FK>>
+  --
+  * description : VARCHAR(100)
+  * start_date : DATE
+  * end_date : DATE
+  * full_day : BOOLEAN
+  --
+  start_time : VARCHAR(10)
+  end_time : VARCHAR(10)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "CashierTransaction (m_cashier_transactions)" as cashier_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * cashier_id : BIGINT <<FK>>
+  * txn_type : SMALLINT
+  * txn_amount : DECIMAL(19,6)
+  * txn_date : DATE
+  * txn_note : VARCHAR(200)
+  --
+  * currency_code : VARCHAR(3)
+  * entity_type : VARCHAR(50)
+  * entity_id : BIGINT
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "TellerCashManagement (m_teller_cash_management)" as teller_cash_management {
+  * id : BIGINT <<PK>>
+  --
+  * teller_id : BIGINT <<FK>>
+  * cashier_id : BIGINT <<FK>>
+  --
+  * txn_type : SMALLINT
+  * txn_amount : DECIMAL(19,6)
+  * txn_date : DATE
+  txn_note : VARCHAR(200)
+  --
+  * currency_code : VARCHAR(3)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' NOTES & DOCUMENTS
+' ============================================
+
+entity "Note (m_note)" as note {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * group_id : BIGINT <<FK>>
+  * loan_id : BIGINT <<FK>>
+  * loan_transaction_id : BIGINT <<FK>>
+  * savings_account_id : BIGINT <<FK>>
+  --
+  * note_type_enum : SMALLINT
+  * note : VARCHAR(1000)
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "Document (m_document)" as document {
+  * id : BIGINT <<PK>>
+  --
+  * parent_entity_type : VARCHAR(50)
+  * parent_entity_id : BIGINT
+  * name : VARCHAR(250)
+  * file_name : VARCHAR(250)
+  * size : BIGINT
+  * type : VARCHAR(50)
+  * description : VARCHAR(1000)
+  * location : VARCHAR(500)
+  * storage_type_enum : INT
+}
+
+' ============================================
+' ADDRESS
+' ============================================
+
+entity "Address (m_address)" as address {
+  * id : BIGINT <<PK>>
+  --
+  * street : VARCHAR(100)
+  address_line_1 : VARCHAR(100)
+  address_line_2 : VARCHAR(100)
+  address_line_3 : VARCHAR(100)
+  * town_village : VARCHAR(100)
+  * city : VARCHAR(100)
+  county : VARCHAR(100)
+  * state_province_id : BIGINT <<FK>>
+  * country_id : BIGINT <<FK>>
+  * postal_code : VARCHAR(10)
+  latitude : DECIMAL(10,8)
+  longitude : DECIMAL(11,8)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "FieldConfiguration (m_field_configuration)" as field_configuration {
+  * id : BIGINT <<PK>>
+  --
+  * entity : VARCHAR(100)
+  * table : VARCHAR(100)
+  * field : VARCHAR(100)
+  * is_enabled : BOOLEAN
+  * is_mandatory : BOOLEAN
+  * validation_regex : VARCHAR(500)
+}
+
+entity "ClientAddress (m_client_address)" as client_address {
+  * id : BIGINT <<PK>>
+  --
+  * client_id : BIGINT <<FK>>
+  * address_id : BIGINT <<FK>>
+  * address_type_id : BIGINT <<FK>>
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' FLOATING RATES
+' ============================================
+
+entity "FloatingRate (m_floating_rates)" as floating_rate {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200) <<unique>>
+  * is_base_lending_rate : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "FloatingRatePeriod (m_floating_rates_periods)" as floating_rate_period {
+  * id : BIGINT <<PK>>
+  --
+  * floating_rates_id : BIGINT <<FK>>
+  * from_date : DATE
+  * interest_rate : DECIMAL(19,6)
+  * is_differential_to_base_lending_rate : BOOLEAN
+  * is_active : BOOLEAN
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' INTEREST RATE CHARTS (FOR SAVINGS)
+' ============================================
+
+entity "InterestRateChart (m_interest_rate_chart)" as interest_rate_chart {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * description : VARCHAR(200)
+  * from_date : DATE
+  end_date : DATE
+  --
+  * is_primary_grouping_by_amount : BOOLEAN
+}
+
+entity "InterestRateChartSlab (m_interest_rate_slab)" as interest_rate_chart_slab {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_chart_id : BIGINT <<FK>>
+  * description : VARCHAR(200)
+  --
+  * period_type_enum : SMALLINT
+  from_period : INT
+  to_period : INT
+  --
+  * amount_range_from : DECIMAL(19,6)
+  * amount_range_to : DECIMAL(19,6)
+  --
+  * annual_interest_rate : DECIMAL(19,6)
+  * currency_code : VARCHAR(3)
+}
+
+entity "InterestIncentives (m_interest_incentives)" as interest_incentives {
+  * id : BIGINT <<PK>>
+  --
+  * interest_rate_slab_id : BIGINT <<FK>>
+  * entity_type : SMALLINT
+  * attribute_name : SMALLINT
+  * condition_type : SMALLINT
+  * attribute_value : VARCHAR(50)
+  * incentive_type : SMALLINT
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' PRODUCT MIX
+' ============================================
+
+entity "ProductMix (m_product_mix)" as product_mix {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * restricted_product_id : BIGINT <<FK>>
+}
+
+' ============================================
+' SELF SERVICE
+' ============================================
+
+entity "SelfBeneficiariesTPT (m_selfservice_beneficiaries_tpt)" as self_beneficiaries {
+  * id : BIGINT <<PK>>
+  --
+  * appuser_id : BIGINT <<FK>>
+  * name : VARCHAR(50)
+  * office_id : BIGINT <<FK>>
+  * client_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  * account_type : SMALLINT
+  * transfer_limit : BIGINT
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' RELATIONSHIPS - TAX
+' ============================================
+
+tax_group ||--o{ tax_group_mappings : "contains components"
+tax_component ||--o{ tax_group_mappings : "part of groups"
+tax_component ||--o{ tax_component_history : "rate history"
+tax_component ||--o{ savings_transaction_tax : "applied to transactions"
+
+' ============================================
+' RELATIONSHIPS - MEETING
+' ============================================
+
+calendar_instance ||--o{ meeting : "scheduled meetings"
+meeting ||--o{ client_attendance : "attendance records"
+
+' ============================================
+' RELATIONSHIPS - ACCOUNT TRANSFERS
+' ============================================
+
+account_transfer_details ||--o{ account_transfer_transaction : "transfer transactions"
+account_transfer_details ||--o{ standing_instruction : "standing instructions"
+
+' ============================================
+' RELATIONSHIPS - TELLER
+' ============================================
+
+teller ||--o{ cashier : "has cashiers"
+cashier ||--o{ cashier_transaction : "processes transactions"
+teller ||--o{ teller_cash_management : "cash management"
+cashier ||--o{ teller_cash_management : "cash operations"
+
+' ============================================
+' RELATIONSHIPS - ADDRESS
+' ============================================
+
+address ||--o{ client_address : "client addresses"
+
+' ============================================
+' RELATIONSHIPS - FLOATING RATES
+' ============================================
+
+floating_rate ||--o{ floating_rate_period : "rate periods"
+
+' ============================================
+' RELATIONSHIPS - INTEREST RATE CHARTS
+' ============================================
+
+interest_rate_chart ||--o{ interest_rate_chart_slab : "interest slabs"
+interest_rate_chart_slab ||--o{ interest_incentives : "incentives"
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of tax_component
+  Tax components define:
+  - Tax name (VAT, GST, Withholding)
+  - Tax percentage
+  - GL accounts for tax collection
+
+  Applied to:
+  - Savings interest earned
+  - Charges
+  - Fees
+end note
+
+note right of meeting
+  Group meetings tracked for:
+  - Attendance
+  - Loan disbursements
+  - Repayment collections
+  - Group lending
+
+  Integrated with Calendar
+end note
+
+note right of interop_identifier
+  Interoperability identifiers
+  for mobile money, MSISDN,
+  or other payment systems
+
+  Enables integration with:
+  - Mojaloop
+  - FINERACT CN
+  - Mobile Money providers
+end note
+
+note right of account_transfer_transaction
+  Account-to-account transfers:
+
+  Types:
+  - Savings to Savings
+  - Savings to Loan (repayment)
+  - Loan to Savings (disbursement)
+
+  Can be:
+  - One-time
+  - Standing instruction (recurring)
+end note
+
+note right of standing_instruction
+  Automated recurring transfers:
+
+  - Salary auto-transfer
+  - Loan auto-repayment
+  - Savings auto-deposit
+  - Bill payments
+
+  Supports various frequencies
+end note
+
+note right of teller
+  Teller operations for:
+  - Cash deposits
+  - Cash withdrawals
+  - Loan repayments
+  - Charge payments
+
+  Multiple tellers per office
+  Multiple cashiers per teller
+end note
+
+note right of cashier_transaction
+  All teller transactions:
+
+  Transaction types:
+  - Allocate cash
+  - Settle cash
+  - Deposit
+  - Withdrawal
+  - Repayment
+end note
+
+note right of note
+  Notes can be attached to:
+  - Clients
+  - Groups
+  - Loans
+  - Loan transactions
+  - Savings accounts
+
+  For tracking interactions
+  and important information
+end note
+
+note right of document
+  Document management:
+
+  - Client documents (ID, proof)
+  - Loan documents
+  - Contracts
+  - Receipts
+
+  Storage:
+  - Database (BLOB)
+  - File system
+  - S3
+end note
+
+note right of address
+  Hierarchical address structure:
+
+  Country > State > City > Town
+
+  Supports:
+  - Multiple addresses per client
+  - Geo-coordinates
+  - Address validation
+end note
+
+note right of floating_rate
+  Variable interest rates that
+  change based on:
+  - Market conditions
+  - Central bank rates
+  - Base lending rate
+
+  Applied to loans with
+  floating rate products
+end note
+
+note right of interest_rate_chart
+  Tiered interest rates for savings:
+
+  Interest varies by:
+  - Deposit amount range
+  - Deposit period
+  - Customer incentives
+
+  Example:
+  $0-$1000: 2%
+  $1001-$5000: 3%
+  $5000+: 4%
+end note
+
+note right of product_mix
+  Product restrictions:
+
+  Prevents clients from having
+  certain combinations of products
+
+  Example:
+  - Cannot have Product A and B
+  - Only one of Product X or Y
+end note
+
+note right of self_beneficiaries
+  Self-service user beneficiaries:
+
+  Pre-registered transfer recipients
+  for faster mobile/web transfers
+
+  Includes transfer limits
+end note
+
+@enduml

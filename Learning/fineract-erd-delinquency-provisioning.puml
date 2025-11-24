@@ -1,0 +1,507 @@
+@startuml Apache Fineract Delinquency & Provisioning ERD
+
+' ============================================
+' APACHE FINERACT - DELINQUENCY & PROVISIONING ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' DELINQUENCY MANAGEMENT
+' ============================================
+
+entity "DelinquencyBucket (m_delinquency_bucket)" as delinquency_bucket {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * classification : VARCHAR(100)
+  * min_age_days : INT
+  * max_age_days : INT
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "DelinquencyRange (m_delinquency_range)" as delinquency_range {
+  * id : BIGINT <<PK>>
+  --
+  * classification : VARCHAR(100) <<unique>>
+  * min_age_days : INT
+  * max_age_days : INT
+}
+
+entity "DelinquencyBucketMappings (m_delinquency_bucket_mappings)" as delinquency_bucket_mappings {
+  * id : BIGINT <<PK>>
+  --
+  * delinquency_bucket_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+}
+
+entity "LoanDelinquencyTags (m_loan_delinquency_tags)" as loan_delinquency_tags {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+  --
+  * added_on_date : DATE
+  lifted_on_date : DATE
+}
+
+entity "LoanDelinquencyAction (m_loan_delinquency_action)" as loan_delinquency_action {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * delinquency_range_id : BIGINT <<FK>>
+  --
+  * action : VARCHAR(100)
+  * start_date : DATE
+  end_date : DATE
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "LoanArrearsAging (m_loan_arrears_aging)" as loan_arrears_aging {
+  * loan_id : BIGINT <<PK,FK>>
+  --
+  * principal_overdue_derived : DECIMAL(19,6)
+  * interest_overdue_derived : DECIMAL(19,6)
+  * fee_charges_overdue_derived : DECIMAL(19,6)
+  * penalty_charges_overdue_derived : DECIMAL(19,6)
+  * total_overdue_derived : DECIMAL(19,6)
+  --
+  * overdue_since_date_derived : DATE
+}
+
+' ============================================
+' PROVISIONING
+' ============================================
+
+entity "ProvisioningCategory (m_provisioning_category)" as provisioning_category {
+  * id : BIGINT <<PK>>
+  --
+  * category_name : VARCHAR(100) <<unique>>
+  * description : VARCHAR(300)
+}
+
+entity "ProvisioningCriteria (m_provisioning_criteria)" as provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_name : VARCHAR(200) <<unique>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "ProvisioningCriteriaDefinition (m_provisioning_criteria_definition)" as provisioning_criteria_definition {
+  * id : BIGINT <<PK>>
+  --
+  * criteria_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  * min_age : BIGINT
+  * max_age : BIGINT
+  * provision_percentage : DECIMAL(5,2)
+  * liability_account : BIGINT <<FK>>
+  * expense_account : BIGINT <<FK>>
+}
+
+entity "LoanProductProvisioningCriteria (m_loanproduct_provisioning_criteria)" as loan_product_provisioning_criteria {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+}
+
+entity "ProvisioningEntry (m_provisioning_entry)" as provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * journal_entry_id : BIGINT <<FK>>
+  * created_date : DATE
+  --
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "LoanProductProvisioningEntry (m_loanproduct_provisioning_entry)" as loan_product_provisioning_entry {
+  * id : BIGINT <<PK>>
+  --
+  * history_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  * product_id : BIGINT <<FK>>
+  * category_id : BIGINT <<FK>>
+  --
+  * overdue_in_days : BIGINT
+  * reseve_amount : DECIMAL(19,6)
+  * liability_account : BIGINT <<FK>>
+  * expense_account : BIGINT <<FK>>
+}
+
+' ============================================
+' CREDIT BUREAU & RISK
+' ============================================
+
+entity "CreditBureau (m_organisation_creditbureau)" as credit_bureau {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<unique>>
+  * product : VARCHAR(100)
+  * country : VARCHAR(50)
+  * implementationKey : VARCHAR(50)
+  * is_active : BOOLEAN
+}
+
+entity "CreditBureauConfiguration (m_creditbureau_configuration)" as credit_bureau_config {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * configkey : VARCHAR(50)
+  * value : TEXT
+  * description : VARCHAR(200)
+  * is_active : BOOLEAN
+}
+
+entity "CreditBureauLoanProductMapping (m_creditbureau_loanproduct_mapping)" as credit_bureau_loan_product_mapping {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * loanproduct_id : BIGINT <<FK>>
+  * is_creditcheck_mandatory : BOOLEAN
+  * skip_creditcheck_in_failure : BOOLEAN
+  * stale_period : INT
+  * is_active : BOOLEAN
+}
+
+entity "CreditBureauReport (m_creditbureau_report)" as credit_bureau_report {
+  * id : BIGINT <<PK>>
+  --
+  * creditbureau_id : BIGINT <<FK>>
+  * national_id : VARCHAR(100)
+  --
+  * created_date : DATE
+  * report_data : TEXT
+}
+
+entity "CreditBureauToken (m_creditbureau_token)" as credit_bureau_token {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(100) <<unique>>
+  * token : VARCHAR(255)
+  * tokenType : VARCHAR(50)
+  * createdDate : DATETIME
+  * validTo : DATETIME
+}
+
+' ============================================
+' LOAN LOSS & IMPAIRMENT
+' ============================================
+
+entity "LoanLossProvision (m_loan_loss_provision)" as loan_loss_provision {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  * currency_code : VARCHAR(3)
+  --
+  * provision_date : DATE
+  * provision_amount : DECIMAL(19,6)
+  * outstanding_loan_balance : DECIMAL(19,6)
+  * provision_percentage : DECIMAL(5,2)
+  --
+  * category_id : BIGINT <<FK>>
+  * criteria_id : BIGINT <<FK>>
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+}
+
+entity "ImpairmentTracking (m_impairment_tracking)" as impairment_tracking {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * assessment_date : DATE
+  --
+  * impairment_stage : SMALLINT
+  * days_past_due : INT
+  * lifetime_expected_loss : DECIMAL(19,6)
+  * 12month_expected_loss : DECIMAL(19,6)
+  * provision_amount : DECIMAL(19,6)
+  --
+  * is_impaired : BOOLEAN
+  impairment_reason : TEXT
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' NPA (NON-PERFORMING ASSETS)
+' ============================================
+
+entity "NPAConfiguration (m_npa_configuration)" as npa_config {
+  * id : BIGINT <<PK>>
+  --
+  * npa_days : INT
+  * include_interest_in_arrears : BOOLEAN
+  * include_fees_in_arrears : BOOLEAN
+  * include_penalties_in_arrears : BOOLEAN
+  --
+  created_date : DATE
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATE
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "LoanNPAStatus (m_loan_npa_status)" as loan_npa_status {
+  * loan_id : BIGINT <<PK,FK>>
+  --
+  * is_npa : BOOLEAN
+  * npa_date : DATE
+  npa_lifted_date : DATE
+  --
+  * days_in_npa : INT
+  * npa_amount : DECIMAL(19,6)
+}
+
+' ============================================
+' PORTFOLIO AT RISK (PAR)
+' ============================================
+
+entity "PortfolioAtRisk (m_portfolio_at_risk)" as portfolio_at_risk {
+  * id : BIGINT <<PK>>
+  --
+  * office_id : BIGINT <<FK>>
+  * as_of_date : DATE
+  --
+  * par_1_amount : DECIMAL(19,6)
+  * par_1_percentage : DECIMAL(5,2)
+  * par_30_amount : DECIMAL(19,6)
+  * par_30_percentage : DECIMAL(5,2)
+  * par_60_amount : DECIMAL(19,6)
+  * par_60_percentage : DECIMAL(5,2)
+  * par_90_amount : DECIMAL(19,6)
+  * par_90_percentage : DECIMAL(5,2)
+  --
+  * total_portfolio : DECIMAL(19,6)
+  * total_loans_count : INT
+  * at_risk_loans_count : INT
+}
+
+' ============================================
+' WRITE-OFF & RECOVERY
+' ============================================
+
+entity "LoanWriteOff (m_loan_write_off)" as loan_write_off {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  --
+  * write_off_date : DATE
+  * write_off_amount : DECIMAL(19,6)
+  * outstanding_principal : DECIMAL(19,6)
+  * outstanding_interest : DECIMAL(19,6)
+  * outstanding_fees : DECIMAL(19,6)
+  * outstanding_penalties : DECIMAL(19,6)
+  --
+  * write_off_reason_id : BIGINT <<FK>>
+  write_off_reason_text : TEXT
+  --
+  approved_by : BIGINT <<FK>>
+  approved_date : DATE
+}
+
+entity "LoanRecovery (m_loan_recovery_repayment)" as loan_recovery {
+  * id : BIGINT <<PK>>
+  --
+  * loan_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  --
+  * recovery_date : DATE
+  * recovery_amount : DECIMAL(19,6)
+  * principal_recovered : DECIMAL(19,6)
+  * interest_recovered : DECIMAL(19,6)
+  * fees_recovered : DECIMAL(19,6)
+  * penalties_recovered : DECIMAL(19,6)
+  --
+  external_id : VARCHAR(100)
+  payment_detail_id : BIGINT <<FK>>
+}
+
+entity "WriteOffReason (m_code_value)" as write_off_reason {
+  * id : BIGINT <<PK>>
+  --
+  * code_id : BIGINT <<FK>>
+  * code_value : VARCHAR(100)
+  * order_position : INT
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' RELATIONSHIPS - DELINQUENCY
+' ============================================
+
+delinquency_bucket ||--o{ delinquency_bucket_mappings : "contains ranges"
+delinquency_range ||--o{ delinquency_bucket_mappings : "mapped to buckets"
+delinquency_range ||--o{ loan_delinquency_tags : "tags loans"
+delinquency_range ||--o{ loan_delinquency_action : "triggers actions"
+
+' ============================================
+' RELATIONSHIPS - PROVISIONING
+' ============================================
+
+provisioning_category ||--o{ provisioning_criteria_definition : "used in criteria"
+
+provisioning_criteria ||--o{ provisioning_criteria_definition : "has definitions"
+provisioning_criteria ||--o{ loan_product_provisioning_criteria : "applied to products"
+provisioning_criteria ||--o{ loan_loss_provision : "calculates provisions"
+
+provisioning_entry ||--o{ loan_product_provisioning_entry : "has details"
+
+provisioning_category ||--o{ loan_product_provisioning_entry : "categorizes"
+provisioning_category ||--o{ loan_loss_provision : "categorizes"
+
+' ============================================
+' RELATIONSHIPS - CREDIT BUREAU
+' ============================================
+
+credit_bureau ||--o{ credit_bureau_config : "configured with"
+credit_bureau ||--o{ credit_bureau_loan_product_mapping : "mapped to products"
+credit_bureau ||--o{ credit_bureau_report : "generates reports"
+
+' ============================================
+' RELATIONSHIPS - WRITE-OFF & RECOVERY
+' ============================================
+
+write_off_reason ||--o{ loan_write_off : "reason for write-off"
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of delinquency_bucket
+  Delinquency buckets group loans
+  by days past due:
+  - 1-30 days: Early delinquency
+  - 31-60 days: Moderate delinquency
+  - 61-90 days: Severe delinquency
+  - 90+ days: High risk / NPA
+end note
+
+note right of delinquency_range
+  Delinquency ranges define
+  classification thresholds
+  Used for:
+  - Portfolio reporting
+  - Risk assessment
+  - Automated actions
+end note
+
+note right of loan_delinquency_action
+  Automated actions triggered
+  when loans enter delinquency:
+  - Send notification
+  - Apply penalty charge
+  - Flag for review
+  - Start collection process
+end note
+
+note right of provisioning_criteria
+  Provisioning criteria define
+  how much to set aside based on:
+  - Days overdue
+  - Loan classification
+  - Regulatory requirements
+
+  Example:
+  - 0-30 days: 10% provision
+  - 31-60 days: 25% provision
+  - 61-90 days: 50% provision
+  - 90+ days: 100% provision
+end note
+
+note right of loan_arrears_aging
+  Tracks overdue amounts by
+  component (principal, interest,
+  fees, penalties) and calculates
+  days overdue since first
+  missed payment
+end note
+
+note right of credit_bureau
+  Integration with credit bureaus:
+  - Equifax
+  - Experian
+  - TransUnion
+  - Local bureaus
+
+  For credit score checking
+  during loan application
+end note
+
+note right of loan_loss_provision
+  Tracks provisions calculated
+  for each loan based on:
+  - Delinquency status
+  - Outstanding balance
+  - Provisioning criteria
+
+  Generates GL entries to
+  Expense and Liability accounts
+end note
+
+note right of npa_config
+  NPA (Non-Performing Asset)
+  configuration defines when
+  loans are classified as NPA
+  (typically 90+ days overdue)
+end note
+
+note right of portfolio_at_risk
+  PAR (Portfolio at Risk) metrics:
+  - PAR > 1 day
+  - PAR > 30 days
+  - PAR > 60 days
+  - PAR > 90 days
+
+  Key indicator of portfolio health
+end note
+
+note right of loan_write_off
+  Write-off is accounting treatment
+  for uncollectible loans
+
+  - Removes from active portfolio
+  - Creates expense GL entry
+  - Can still pursue recovery
+  - Requires approval
+end note
+
+note right of loan_recovery
+  Tracks recoveries after write-off
+
+  - Reduces write-off expense
+  - Improves portfolio metrics
+  - Creates income GL entry
+end note
+
+note right of impairment_tracking
+  IFRS 9 impairment tracking:
+  - Stage 1: 12-month ECL
+  - Stage 2: Lifetime ECL
+  - Stage 3: Credit-impaired
+
+  ECL = Expected Credit Loss
+end note
+
+@enduml

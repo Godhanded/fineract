@@ -1,0 +1,382 @@
+@startuml Apache Fineract Shares & Dividends ERD
+
+' ============================================
+' APACHE FINERACT - SHARES & DIVIDENDS ERD
+' ============================================
+
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' SHARE PRODUCT
+' ============================================
+
+entity "ShareProduct (m_share_product)" as share_product {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(200)
+  * short_name : VARCHAR(4)
+  * description : VARCHAR(500)
+  external_id : VARCHAR(100) <<unique>>
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  --
+  ' Shares Configuration
+  * total_shares_issued : BIGINT
+  * shares_issued : BIGINT
+  * unit_price : DECIMAL(19,6)
+  * share_capital : DECIMAL(19,6)
+  * minimum_client_shares : BIGINT
+  * nominal_client_shares : BIGINT
+  * maximum_client_shares : BIGINT
+  --
+  ' Trading Configuration
+  * allow_dividends_for_inactive_clients : BOOLEAN
+  * lockin_period_frequency : INT
+  * lockin_period_frequency_enum : SMALLINT
+  --
+  ' Accounting
+  * accounting_type : SMALLINT
+  --
+  ' Market Price
+  * minimum_active_period_for_dividends : INT
+  * minimum_activa_period_frequency_enum : SMALLINT
+  --
+  ' Lifecycle
+  start_date : DATE
+  closedon_date : DATE
+  --
+  ' Audit
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+entity "ShareProductMarketPrice (m_share_product_market_price)" as share_product_market_price {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * from_date : DATE
+  * share_value : DECIMAL(19,6)
+}
+
+entity "ShareProductDividendPayOutDetails (m_share_product_dividend_pay_out)" as share_product_dividend_payout {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * status : INT
+  --
+  * dividend_period_start_date : DATE
+  * dividend_period_end_date : DATE
+  * amount : DECIMAL(19,6)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' SHARE ACCOUNT
+' ============================================
+
+entity "ShareAccount (m_share_account)" as share_account {
+  * id : BIGINT <<PK>>
+  --
+  * account_no : VARCHAR(20) <<unique>>
+  external_id : VARCHAR(100) <<unique>>
+  --
+  * client_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  --
+  ' Officers & Office
+  field_officer_id : BIGINT <<FK>>
+  * office_id : BIGINT <<FK>>
+  savings_account_id : BIGINT <<FK>>
+  --
+  ' Share Configuration
+  * status_enum : SMALLINT
+  * account_type_enum : SMALLINT
+  * minimum_active_period_frequency : INT
+  * minimum_active_period_frequency_enum : SMALLINT
+  * lockin_period_frequency : INT
+  * lockin_period_frequency_enum : SMALLINT
+  --
+  ' Shares Tracking
+  * approved_shares : BIGINT
+  * pending_shares : BIGINT
+  * total_pending_shares : BIGINT
+  --
+  ' Derived Values
+  total_shares_derived : BIGINT
+  total_dividends_amount : DECIMAL(19,6)
+  --
+  ' Currency
+  * currency_code : VARCHAR(3)
+  * currency_digits : SMALLINT
+  * currency_multiplesof : SMALLINT
+  --
+  ' Unit Price
+  * unit_price : DECIMAL(19,6)
+  * share_capital : DECIMAL(19,6)
+  --
+  ' Lifecycle Dates
+  submittedon_date : DATE
+  submittedby_id : BIGINT <<FK>>
+  approvedon_date : DATE
+  approvedby_id : BIGINT <<FK>>
+  activatedon_date : DATE
+  activatedby_id : BIGINT <<FK>>
+  closedon_date : DATE
+  closedby_id : BIGINT <<FK>>
+  rejectedon_date : DATE
+  rejectedby_id : BIGINT <<FK>>
+  lockedin_until_date : DATE
+  --
+  ' Dividends
+  * allow_dividends_inactive_clients : BOOLEAN
+}
+
+' ============================================
+' SHARE TRANSACTIONS
+' ============================================
+
+entity "ShareAccountTransaction (m_share_account_transactions)" as share_account_transaction {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * transaction_date : DATE
+  * total_shares : BIGINT
+  * unit_price : DECIMAL(19,6)
+  * amount : DECIMAL(19,6)
+  * charge_amount : DECIMAL(19,6)
+  * amount_paid : DECIMAL(19,6)
+  --
+  * status_enum : SMALLINT
+  * type_enum : SMALLINT
+  * is_active : BOOLEAN
+  --
+  payment_detail_id : BIGINT <<FK>>
+  --
+  ' Audit
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' SHARE CHARGES
+' ============================================
+
+entity "ShareAccountCharge (m_share_account_charge)" as share_account_charge {
+  * id : BIGINT <<PK>>
+  --
+  * account_id : BIGINT <<FK>>
+  * charge_id : BIGINT <<FK>>
+  --
+  * charge_time_enum : SMALLINT
+  * charge_calculation_enum : SMALLINT
+  --
+  * amount : DECIMAL(19,6)
+  * amount_paid_derived : DECIMAL(19,6)
+  * amount_waived_derived : DECIMAL(19,6)
+  * amount_writtenoff_derived : DECIMAL(19,6)
+  * amount_outstanding_derived : DECIMAL(19,6)
+  --
+  * is_penalty : BOOLEAN
+  * is_paid_derived : BOOLEAN
+  * waived : BOOLEAN
+  * is_active : BOOLEAN
+}
+
+entity "ShareAccountChargePaidBy (m_share_account_charge_paid_by)" as share_account_charge_paid_by {
+  * id : BIGINT <<PK>>
+  --
+  * charge_id : BIGINT <<FK>>
+  * transaction_id : BIGINT <<FK>>
+  * amount : DECIMAL(19,6)
+}
+
+' ============================================
+' DIVIDENDS
+' ============================================
+
+entity "ShareAccountDividendDetails (m_share_account_dividend_details)" as share_account_dividend_details {
+  * id : BIGINT <<PK>>
+  --
+  * dividend_pay_out_id : BIGINT <<FK>>
+  * account_id : BIGINT <<FK>>
+  --
+  * status : INT
+  * amount : DECIMAL(19,6)
+  --
+  created_date : DATETIME
+  createdby_id : BIGINT <<FK>>
+  lastmodified_date : DATETIME
+  lastmodifiedby_id : BIGINT <<FK>>
+}
+
+' ============================================
+' PURCHASE PERIOD
+' ============================================
+
+entity "SharePurchasePeriod (m_share_purchase_period)" as share_purchase_period {
+  * id : BIGINT <<PK>>
+  --
+  * product_id : BIGINT <<FK>>
+  * from_date : DATE
+  * to_date : DATE
+  * unit_price : DECIMAL(19,6)
+  * minimum_shares : BIGINT
+  * maximum_shares : BIGINT
+  * is_active : BOOLEAN
+}
+
+' ============================================
+' RELATIONSHIPS - SHARE PRODUCT
+' ============================================
+
+share_product ||--o{ share_product_market_price : "market prices"
+share_product ||--o{ share_product_dividend_payout : "dividend payouts"
+share_product ||--o{ share_account : "instantiated as"
+share_product ||--o{ share_purchase_period : "purchase periods"
+
+' ============================================
+' RELATIONSHIPS - SHARE ACCOUNT
+' ============================================
+
+share_account ||--o{ share_account_transaction : "has transactions"
+share_account ||--o{ share_account_charge : "has charges"
+share_account ||--o{ share_account_dividend_details : "receives dividends"
+
+' ============================================
+' RELATIONSHIPS - TRANSACTIONS & CHARGES
+' ============================================
+
+share_account_transaction ||--o{ share_account_charge_paid_by : "pays charges"
+share_account_charge ||--o{ share_account_charge_paid_by : "paid by transactions"
+
+' ============================================
+' RELATIONSHIPS - DIVIDENDS
+' ============================================
+
+share_product_dividend_payout ||--o{ share_account_dividend_details : "distributed to accounts"
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of share_product
+  Share products define the terms
+  for share accounts:
+
+  - Unit price per share
+  - Min/max shares per client
+  - Total shares issued
+  - Lock-in period
+  - Dividend eligibility
+
+  Examples:
+  - Common Stock
+  - Preferred Stock
+  - Cooperative Shares
+end note
+
+note right of share_account
+  Share accounts track ownership:
+
+  Status:
+  - Submitted
+  - Approved
+  - Active
+  - Closed
+  - Rejected
+
+  Transaction Types:
+  - Purchase (buy shares)
+  - Redemption (sell shares)
+  - Dividend payout
+end note
+
+note right of share_account_transaction
+  Transaction types:
+
+  1. PURCHASE (BUY)
+     - Client buys shares
+     - Increases total_shares
+
+  2. REDEMPTION (SELL)
+     - Client sells shares back
+     - Decreases total_shares
+     - Subject to lock-in period
+
+  3. CHARGE PAYMENT
+     - Pay share-related charges
+end note
+
+note right of share_account_charge
+  Charges applied to share accounts:
+
+  - Purchase fee (%)
+  - Redemption fee (%)
+  - Transfer fee (flat)
+  - Annual membership fee
+
+  Charge time:
+  - On purchase
+  - On redemption
+  - Annual
+end note
+
+note right of share_product_dividend_payout
+  Dividend distribution:
+
+  1. Create dividend period
+  2. Calculate dividends per share
+  3. Distribute to eligible accounts
+  4. Post dividend income
+
+  Eligibility criteria:
+  - Account must be active
+  - Minimum holding period met
+  - Shares not in lock-in
+end note
+
+note right of share_account_dividend_details
+  Tracks individual dividend
+  payments to each share account
+
+  Amount calculated based on:
+  - Number of shares held
+  - Dividend per share
+  - Eligible shares only
+end note
+
+note right of share_product_market_price
+  Historical market prices
+  for the share product
+
+  Used for:
+  - Valuation
+  - NAV calculation
+  - Performance tracking
+end note
+
+note right of share_purchase_period
+  Defines when shares can be
+  purchased and at what price
+
+  Allows for:
+  - IPO periods
+  - Special offering periods
+  - Variable pricing
+  - Purchase limits
+end note
+
+@enduml

@@ -4,25 +4,57 @@ This directory contains PlantUML Entity Relationship Diagrams (ERD) for the Apac
 
 ## Available Diagrams
 
-### 1. Complete ERD (`fineract-erd-complete.puml`)
-- **Entities:** All 234 entities across all domains
-- **Coverage:** Organizational, Client/Group, Loan, Savings, Accounting, Infrastructure
-- **Use Case:** Get a complete overview of the entire database schema
+### 1. ALL ENTITIES COMPLETE ERD (`fineract-erd-ALL-ENTITIES-COMPLETE.puml`) ⭐ NEW
+- **Entities:** ALL 225+ entities across ALL domains in ONE file
+- **Size:** 104KB, 3,668 lines
+- **Coverage:** Every single entity in the entire Fineract codebase
+- **Use Case:** Complete comprehensive view of the entire database schema
+- **Note:** This is a VERY large diagram. For better viewing, use domain-specific diagrams below.
 
-### 2. Loan Domain ERD (`fineract-erd-loan-only.puml`)
-- **Entities:** Loan, LoanProduct, LoanTransaction, LoanRepaymentSchedule, LoanCharge, Collateral, Guarantor, and more
-- **Features:** 43 transaction types, re-aging, re-amortization, reschedule workflows
+### 2. Core Entities ERD (`fineract-erd-core-entities.puml`)
+- **Entities:** 39 core entities (Office, Staff, Client, Group, basic Loan/Savings, Infrastructure)
+- **Coverage:** Organizational entities, Client/Group, basic Loan, basic Savings, Code, Calendar, PaymentDetail
+- **Use Case:** Get started with the most frequently used entities
+
+### 3. Loan Domain ERD (`fineract-erd-loan-only.puml`)
+- **Entities:** 45+ loan-related entities
+- **Features:** LoanProduct, Loan, LoanTransaction (43 types), LoanRepaymentSchedule, LoanCharge, Collateral, Guarantor, Arrears Aging, Topup, Tranche, Interest Recalculation
 - **Use Case:** Deep dive into loan management implementation
 
-### 3. Savings Domain ERD (`fineract-erd-savings-only.puml`)
-- **Entities:** SavingsAccount, SavingsProduct, FixedDeposit, RecurringDeposit, Interest Rate Charts
-- **Features:** Interest calculation, dormancy tracking, account types
+### 4. Savings Domain ERD (`fineract-erd-savings-only.puml`)
+- **Entities:** 42+ savings-related entities
+- **Features:** SavingsAccount, SavingsProduct, FixedDeposit, RecurringDeposit, Interest Rate Charts, Tax Details, Officer Assignment
 - **Use Case:** Understand savings and deposit account implementation
 
-### 4. Accounting Domain ERD (`fineract-erd-accounting-only.puml`)
-- **Entities:** GLAccount, JournalEntry, ProductToGLAccountMapping, AccountingRule, Provisioning
-- **Features:** Chart of accounts, automatic journal posting, trial balance
+### 5. Accounting Domain ERD (`fineract-erd-accounting-only.puml`)
+- **Entities:** 28+ accounting entities
+- **Features:** GLAccount, JournalEntry, ProductToGLAccountMapping, AccountingRule, Provisioning, GLClosure, Financial Activity
 - **Use Case:** Understand accounting integration and GL structure
+
+### 6. Security & User Administration ERD (`fineract-erd-security.puml`) ⭐ NEW
+- **Entities:** 18 security entities
+- **Features:** AppUser, Role, Permission (RBAC), Two-Factor Authentication, API Keys, OAuth2, Maker-Checker CommandSource, Login Attempts, User Sessions, Security Audit
+- **Use Case:** Understand authentication, authorization, and security model
+
+### 7. Infrastructure & Configuration ERD (`fineract-erd-infrastructure.puml`) ⭐ NEW
+- **Entities:** 35 infrastructure entities
+- **Features:** Scheduled Jobs, Webhooks, Notifications (SMS/Email/In-app), Reports, Templates, Global Configuration, Business Date, Data Tables, PPI Surveys, Audit
+- **Use Case:** Understand system configuration, batch jobs, and external integrations
+
+### 8. Delinquency & Provisioning ERD (`fineract-erd-delinquency-provisioning.puml`) ⭐ NEW
+- **Entities:** 20 risk management entities
+- **Features:** Delinquency Buckets/Ranges, Loan Arrears Aging, Provisioning Criteria, Credit Bureau Integration, NPA Configuration, Write-off & Recovery, Portfolio at Risk, Impairment Tracking (IFRS 9)
+- **Use Case:** Understand risk management, provisioning, and delinquency tracking
+
+### 9. Shares & Dividends ERD (`fineract-erd-shares.puml`) ⭐ NEW
+- **Entities:** 12 share-related entities
+- **Features:** ShareProduct, ShareAccount, Share Transactions (purchase/redemption), Dividend Payouts, Market Prices, Purchase Periods
+- **Use Case:** Understand share account management and dividend distribution
+
+### 10. Additional Entities ERD (`fineract-erd-additional.puml`) ⭐ NEW
+- **Entities:** 36 additional entities
+- **Features:** Tax (TaxGroup, TaxComponent, Withholding), Meeting & Attendance, Interoperability (Mojaloop), Account Transfers, Standing Instructions, Teller & Cashier, Notes & Documents, Address Management, Floating Rates, Interest Rate Charts, Product Mix
+- **Use Case:** Understand operational entities, taxes, meetings, tellers, and transfers
 
 ## How to View the Diagrams
 
